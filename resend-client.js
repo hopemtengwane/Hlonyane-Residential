@@ -1,40 +1,40 @@
-/* Production email bridge for Hlonyane Residential.
-   The shared Supabase smart-handler expects multipart/form-data. */
+/* Hlonyane Residential enquiry bridge using the same Supabase client pattern as Mabcor. */
 (() => {
-  const apiUrl = window.HLONYANE_API_URL || localStorage.getItem('hlonyaneApiUrl') || '';
-  const supabaseKey = window.HLONYANE_SUPABASE_KEY || 'sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
+  const supabaseUrl = 'https://aovespfbrgctyxhxssji.supabase.co';
+  const publishableKey = 'sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
 
-  window.hlonyaneNotify = async (payload) => {
-    if (!apiUrl) return { ok: false, offline: true };
+  const configured = window.supabase?.createClient && publishableKey;
+  const client = configured
+    ? window.supabase.createClient(supabaseUrl, publishableKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+          detectSessionInUrl: false
+        }
+      })
+    : null;
 
-    const fd = payload instanceof FormData ? payload : new FormData();
-    if (!(payload instanceof FormData)) {
-      Object.entries(payload || {}).forEach(([key, value]) => {
-        if (value === undefined || value === null) return;
-        fd.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-      });
+  window.hlonyaneNotify = async (formData) => {
+    if (!client) throw new Error('The enquiry service is not available in this browser.');
+    const { data, error } = await client.functions.invoke('hlonyane-handler', { body: formData });
+    if (error) {
+      let message = error.message || 'Unable to send notification.';
+      try {
+        const context = error.context;
+        if (context && typeof context.json === 'function') {
+          const body = await context.json();
+          message = body?.error || body?.message || message;
+        }
+      } catch (_) {}
+      throw new Error(message);
     }
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`
-      },
-      body: fd
-    });
-
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok || result?.ok === false) {
-      const detail = result?.error || result?.message || `Request failed (${response.status})`;
-      throw new Error(detail);
-    }
-    return result;
+    if (!data?.ok) throw new Error(data?.error || 'Unable to send notification.');
+    return data;
   };
 
   document.addEventListener('submit', async (event) => {
     const form = event.target;
-    if (!apiUrl || !(form instanceof HTMLFormElement) || form.id !== 'enquiryForm') return;
+    if (!(form instanceof HTMLFormElement) || form.id !== 'enquiryForm') return;
 
     event.preventDefault();
     event.stopImmediatePropagation();
