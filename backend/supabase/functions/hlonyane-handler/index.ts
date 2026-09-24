@@ -40,6 +40,8 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'POST required' }, 405);
   try {
     const payload = await request.json();
+    const site = String(payload.site || 'hlonyane');
+    if (!['hlonyane', 'mabcor'].includes(site)) return json({ error: 'Unsupported site.' }, 400);
     const type = String(payload.type || 'enquiry');
     const adminEmail = Deno.env.get('HLONYANE_ADMIN_EMAIL') || 'msindisi.mtengwane@gmail.com';
     const sender = String(payload.email || payload.replyTo || '').trim();
@@ -49,7 +51,8 @@ Deno.serve(async (request) => {
     if (!message) return json({ error: 'Message is required.' }, 400);
     const attachments = Array.isArray(payload.attachments) ? payload.attachments.filter((item: Attachment) => item?.filename && item?.content) : [];
     const details = Object.entries(payload.details || {}).map(([key, value]) => `<p><strong>${esc(key)}:</strong> ${esc(value)}</p>`).join('');
-    const html = `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>${esc(subject)}</h2><p>${esc(message).replace(/\n/g, '<br>')}</p>${details}<hr><p style="color:#657366;font-size:12px">Sent from Hlonyane Residential.</p></div>`;
+    const brand = site === 'mabcor' ? 'Mabcor Facilities Solutions' : 'Hlonyane Residential';
+    const html = `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>${esc(subject)}</h2><p>${esc(message).replace(/\n/g, '<br>')}</p>${details}<hr><p style="color:#657366;font-size:12px">Sent from ${esc(brand)}.</p></div>`;
     const result = await sendResend({ to: payload.to || adminEmail, subject, html, replyTo: sender || undefined, attachments });
     if (sender && payload.sendConfirmation !== false) {
       await sendResend({ to: sender, subject: 'We received your message · Hlonyane Residential', html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Thank you, ${esc(name)}</h2><p>We received your message and a member of the Hlonyane Residential team will be in touch.</p><p>${esc(message).replace(/\n/g, '<br>')}</p></div>` });
