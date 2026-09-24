@@ -16,7 +16,7 @@
 
   window.hlonyaneNotify = async (formData) => {
     if (!client) throw new Error('The enquiry service is not available in this browser.');
-    const { data, error } = await client.functions.invoke('hlonyane-handler', { body: formData });
+    const { data, error } = await client.functions.invoke('Hlonyane-handler', { body: formData });
     if (error) {
       let message = error.message || 'Unable to send notification.';
       try {
