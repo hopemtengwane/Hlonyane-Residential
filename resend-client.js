@@ -16,7 +16,7 @@
     const values = Object.fromEntries(new FormData(form).entries());
     if (status) status.textContent = 'Sending your enquiry…';
     try {
-      await window.hlonyaneNotify({ type: 'enquiry', name: values.name, email: values.email, message: values.message, details: values, sendConfirmation: true });
+      await window.hlonyaneNotify({ site: 'hlonyane', type: 'enquiry', name: values.name, email: values.email, message: values.message, details: values, sendConfirmation: true });
       if (status) status.textContent = '✓ Enquiry sent. We will be in touch.';
       form.reset();
     } catch (error) { if (status) status.textContent = `Unable to send enquiry: ${error.message}`; }
