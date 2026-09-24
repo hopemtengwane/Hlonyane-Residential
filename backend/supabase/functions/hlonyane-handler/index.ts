@@ -99,14 +99,22 @@ Deno.serve(async (request) => {
 
     const adminSubject = `Hlonyane enquiry — ${reference}`;
     const adminHtml = `
-      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1c2b20">
-        <h2 style="margin:0 0 18px;color:#174326">New Hlonyane Residential enquiry</h2>
-        <table style="border-collapse:collapse;margin-bottom:22px">${detailRows}</table>
-        <div style="padding:18px;background:#f4f7f2;border-left:4px solid #2f7d3b">
-          ${esc(message).replace(/\n/g, '<br>')}
-        </div>
-        <p style="margin-top:22px;color:#657366;font-size:12px">Sent from the Hlonyane Residential website.</p>
-      </div>`;
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3f2ed" style="width:100%;background:#f3f2ed;margin:0;padding:0">
+        <tr><td align="center" style="padding:32px 16px">
+          <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:680px;background:#ffffff;border-collapse:separate;border-spacing:0;border-radius:18px;overflow:hidden">
+            <tr><td height="8" bgcolor="#2f7d3b" style="height:8px;background:#2f7d3b;font-size:0;line-height:0">&nbsp;</td></tr>
+            <tr><td style="padding:34px 40px 18px">
+              <img src="https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png" alt="Hlonyane Residential" width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin:0 0 26px">
+              <h2 style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:26px;line-height:1.25;color:#174326">New Hlonyane Residential enquiry</h2>
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:15px;color:#253128">${detailRows}</table>
+              <div style="margin-top:24px;padding:18px 20px;background:#f4f7f2;border-left:4px solid #2f7d3b;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#253128">
+                ${esc(message).replace(/\\n/g, '<br>')}
+              </div>
+              <p style="margin:22px 0 0;font-family:Arial,sans-serif;color:#657366;font-size:12px;line-height:1.5">Sent from the Hlonyane Residential website.</p>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>`;
 
     await sendResend({
       to: adminEmail,
@@ -118,18 +126,36 @@ Deno.serve(async (request) => {
     if (sendConfirmation) {
       const confirmationSubject = `We received your Hlonyane Residential enquiry — ${reference}`;
       const confirmationHtml = `
-        <div style="margin:0;background:#f3f2ed;padding:40px 18px;font-family:Arial,sans-serif;color:#202720">
-          <div style="max-width:760px;margin:auto;background:#fff;border-radius:22px;overflow:hidden;border-top:9px solid #2f7d3b">
-            <div style="padding:46px 58px">
-              <h1 style="margin:0 0 28px;font-size:34px;color:#173a24">Thank you for contacting Hlonyane Residential</h1>
-              <p style="font-size:20px;margin:0 0 22px">Hi ${esc(name)},</p>
-              <p style="font-size:18px;line-height:1.7">Your enquiry has been received successfully by Hlonyane Residential.</p>
-              <p style="font-size:18px;line-height:1.7">Your reference is <strong>${reference}</strong>.</p>
-              <p style="font-size:18px;line-height:1.7">A member of our team will be in touch.</p>
-              <div style="margin-top:30px;padding:18px;background:#f4f7f2;border-left:4px solid #c9a84b">${esc(message).replace(/\n/g, '<br>')}</div>
-            </div>
-          </div>
-        </div>`;
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3f2ed" style="width:100%;background:#f3f2ed;margin:0;padding:0">
+          <tr><td align="center" style="padding:36px 14px">
+            <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:680px;background:#ffffff;border-collapse:separate;border-spacing:0;border-radius:20px;overflow:hidden;border:1px solid #e1e4de">
+              <tr><td height="9" bgcolor="#2f7d3b" style="height:9px;background:#2f7d3b;font-size:0;line-height:0">&nbsp;</td></tr>
+              <tr><td style="padding:38px 40px 18px">
+                <img src="https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png" alt="Hlonyane Residential" width="280" style="display:block;width:280px;max-width:100%;height:auto;border:0;margin:0 0 30px">
+                <h1 style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:31px;line-height:1.25;color:#173a24;font-weight:700">Thank you for contacting Hlonyane Residential</h1>
+                <p style="margin:0 0 18px;font-family:Arial,sans-serif;font-size:18px;line-height:1.6;color:#252b26">Hi ${esc(name)},</p>
+                <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:17px;line-height:1.65;color:#252b26">Your enquiry has been received successfully by Hlonyane Residential.</p>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f4f1ea" style="width:100%;background:#f4f1ea;border-collapse:separate;border-spacing:0;border-radius:10px;margin:0 0 24px">
+                  <tr><td style="padding:18px 20px;font-family:Arial,sans-serif">
+                    <div style="font-size:12px;line-height:1.3;font-weight:700;letter-spacing:1.4px;color:#a47d1e;text-transform:uppercase;margin-bottom:8px">YOUR REFERENCE</div>
+                    <div style="font-size:22px;line-height:1.35;font-weight:700;color:#202720">${reference}</div>
+                  </td></tr>
+                </table>
+
+                <p style="margin:0 0 18px;font-family:Arial,sans-serif;font-size:17px;line-height:1.65;color:#252b26">A member of the Hlonyane Residential team will be in touch.</p>
+                <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#657366">Please keep the reference number above should you need to follow up on your enquiry.</p>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f4f7f2" style="width:100%;background:#f4f7f2;border-collapse:separate;border-spacing:0;margin:0 0 28px;border-left:4px solid #c9a84b">
+                  <tr><td style="padding:16px 18px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#253128">${esc(message).replace(/\\n/g, '<br>')}</td></tr>
+                </table>
+
+                <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#252b26">Regards,<br><strong>Hlonyane Residential Team</strong></p>
+              </td></tr>
+              <tr><td bgcolor="#f7f8f5" style="padding:18px 40px;background:#f7f8f5;border-top:1px solid #e3e6df;font-family:Arial,sans-serif;font-size:12px;line-height:1.5;color:#7a817b">Hlonyane Residential · Middelburg, Eastern Cape</td></tr>
+            </table>
+          </td></tr>
+        </table>`;
 
       await sendResend({
         to: email,
