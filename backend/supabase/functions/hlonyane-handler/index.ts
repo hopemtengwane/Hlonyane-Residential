@@ -23,8 +23,8 @@ const sendResend = async ({ to, subject, html, replyTo, attachments }: {
   attachments?: Attachment[];
 }) => {
   const apiKey = Deno.env.get('RESEND_API_KEY');
-  const from = Deno.env.get('RESEND_FROM_EMAIL');
-  if (!apiKey || !from) throw new Error('Resend is not configured: add RESEND_API_KEY and RESEND_FROM_EMAIL.');
+  const from = Deno.env.get('RESEND_FROM_EMAIL') || 'Hlonyane Residential <onboarding@resend.dev>';
+  if (!apiKey) throw new Error('Resend is not configured: add RESEND_API_KEY.');
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
@@ -55,7 +55,11 @@ Deno.serve(async (request) => {
     const html = `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>${esc(subject)}</h2><p>${esc(message).replace(/\n/g, '<br>')}</p>${details}<hr><p style="color:#657366;font-size:12px">Sent from ${esc(brand)}.</p></div>`;
     const result = await sendResend({ to: payload.to || adminEmail, subject, html, replyTo: sender || undefined, attachments });
     if (sender && payload.sendConfirmation !== false) {
-      await sendResend({ to: sender, subject: 'We received your message · Hlonyane Residential', html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Thank you, ${esc(name)}</h2><p>We received your message and a member of the Hlonyane Residential team will be in touch.</p><p>${esc(message).replace(/\n/g, '<br>')}</p></div>` });
+      try {
+        await sendResend({ to: sender, subject: 'We received your message · Hlonyane Residential', html: `<div style="font-family:Arial,sans-serif;line-height:1.6"><h2>Thank you, ${esc(name)}</h2><p>We received your message and a member of the Hlonyane Residential team will be in touch.</p><p>${esc(message).replace(/\n/g, '<br>')}</p></div>` });
+      } catch (confirmationError) {
+        console.warn('Confirmation email could not be sent while using the temporary Resend sender.', confirmationError);
+      }
     }
     return json({ ok: true, id: result?.id || null });
   } catch (error) {
