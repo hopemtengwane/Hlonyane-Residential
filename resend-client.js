@@ -2,6 +2,7 @@
    The shared Supabase smart-handler expects multipart/form-data. */
 (() => {
   const apiUrl = window.HLONYANE_API_URL || localStorage.getItem('hlonyaneApiUrl') || '';
+  const supabaseKey = window.HLONYANE_SUPABASE_KEY || 'sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
 
   window.hlonyaneNotify = async (payload) => {
     if (!apiUrl) return { ok: false, offline: true };
@@ -16,12 +17,17 @@
 
     const response = await fetch(apiUrl, {
       method: 'POST',
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      },
       body: fd
     });
 
     const result = await response.json().catch(() => ({}));
     if (!response.ok || result?.ok === false) {
-      throw new Error(result?.error || 'Unable to send notification.');
+      const detail = result?.error || result?.message || `Request failed (${response.status})`;
+      throw new Error(detail);
     }
     return result;
   };
