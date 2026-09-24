@@ -22,11 +22,19 @@ const makeReference = () => {
   return `HLR-${y}${m}${d}-${token}`;
 };
 
-const sendResend = async ({ to, subject, html, replyTo }: {
+type ResendAttachment = {
+  path?: string;
+  filename: string;
+  content_id?: string;
+  content_type?: string;
+};
+
+const sendResend = async ({ to, subject, html, replyTo, attachments }: {
   to: string | string[];
   subject: string;
   html: string;
   replyTo?: string;
+  attachments?: ResendAttachment[];
 }) => {
   const apiKey = Deno.env.get('RESEND_API_KEY');
   const from = Deno.env.get('HLONYANE_FROM_EMAIL') || Deno.env.get('RESEND_FROM_EMAIL') || 'Hlonyane Residential <onboarding@resend.dev>';
@@ -40,7 +48,8 @@ const sendResend = async ({ to, subject, html, replyTo }: {
       to,
       subject,
       html,
-      ...(replyTo ? { reply_to: replyTo } : {})
+      ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(attachments?.length ? { attachments } : {})
     }),
   });
 
@@ -81,6 +90,12 @@ Deno.serve(async (request) => {
 
     const adminEmail = Deno.env.get('HLONYANE_ADMIN_EMAIL') || 'msindisi.mtengwane@gmail.com';
     const reference = makeReference();
+    const logoAttachment: ResendAttachment = {
+      path: 'https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png',
+      filename: 'hlonyane-residential-logo.png',
+      content_id: 'hlonyane-logo',
+      content_type: 'image/png'
+    };
 
     const detailRows = [
       ['Reference', reference],
@@ -104,11 +119,11 @@ Deno.serve(async (request) => {
           <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:680px;background:#ffffff;border-collapse:separate;border-spacing:0;border-radius:18px;overflow:hidden">
             <tr><td height="8" bgcolor="#2f7d3b" style="height:8px;background:#2f7d3b;font-size:0;line-height:0">&nbsp;</td></tr>
             <tr><td style="padding:34px 40px 18px">
-              <img src="https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png" alt="Hlonyane Residential" width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin:0 0 26px">
+              <img src="cid:hlonyane-logo" alt="Hlonyane Residential" width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin:0 0 26px">
               <h2 style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:26px;line-height:1.25;color:#174326">New Hlonyane Residential enquiry</h2>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:15px;color:#253128">${detailRows}</table>
               <div style="margin-top:24px;padding:18px 20px;background:#f4f7f2;border-left:4px solid #2f7d3b;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#253128">
-                ${esc(message).replace(/\\n/g, '<br>')}
+                ${esc(message).replace(/\n/g, '<br>')}
               </div>
               <p style="margin:22px 0 0;font-family:Arial,sans-serif;color:#657366;font-size:12px;line-height:1.5">Sent from the Hlonyane Residential website.</p>
             </td></tr>
@@ -120,7 +135,8 @@ Deno.serve(async (request) => {
       to: adminEmail,
       subject: adminSubject,
       html: adminHtml,
-      replyTo: email
+      replyTo: email,
+      attachments: [logoAttachment]
     });
 
     if (sendConfirmation) {
@@ -131,7 +147,7 @@ Deno.serve(async (request) => {
             <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:680px;background:#ffffff;border-collapse:separate;border-spacing:0;border-radius:20px;overflow:hidden;border:1px solid #e1e4de">
               <tr><td height="9" bgcolor="#2f7d3b" style="height:9px;background:#2f7d3b;font-size:0;line-height:0">&nbsp;</td></tr>
               <tr><td style="padding:38px 40px 18px">
-                <img src="https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png" alt="Hlonyane Residential" width="280" style="display:block;width:280px;max-width:100%;height:auto;border:0;margin:0 0 30px">
+                <img src="cid:hlonyane-logo" alt="Hlonyane Residential" width="280" style="display:block;width:280px;max-width:100%;height:auto;border:0;margin:0 0 30px">
                 <h1 style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:31px;line-height:1.25;color:#173a24;font-weight:700">Thank you for contacting Hlonyane Residential</h1>
                 <p style="margin:0 0 18px;font-family:Arial,sans-serif;font-size:18px;line-height:1.6;color:#252b26">Hi ${esc(name)},</p>
                 <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:17px;line-height:1.65;color:#252b26">Your enquiry has been received successfully by Hlonyane Residential.</p>
@@ -147,7 +163,7 @@ Deno.serve(async (request) => {
                 <p style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:14px;line-height:1.6;color:#657366">Please keep the reference number above should you need to follow up on your enquiry.</p>
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f4f7f2" style="width:100%;background:#f4f7f2;border-collapse:separate;border-spacing:0;margin:0 0 28px;border-left:4px solid #c9a84b">
-                  <tr><td style="padding:16px 18px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#253128">${esc(message).replace(/\\n/g, '<br>')}</td></tr>
+                  <tr><td style="padding:16px 18px;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#253128">${esc(message).replace(/\n/g, '<br>')}</td></tr>
                 </table>
 
                 <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#252b26">Regards,<br><strong>Hlonyane Residential Team</strong></p>
@@ -160,7 +176,8 @@ Deno.serve(async (request) => {
       await sendResend({
         to: email,
         subject: confirmationSubject,
-        html: confirmationHtml
+        html: confirmationHtml,
+        attachments: [logoAttachment]
       });
     }
 
