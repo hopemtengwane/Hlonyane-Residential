@@ -1,2 +1,3 @@
 .portal .parallax-portal{width:calc(100% + 14vw);margin:36px -7vw 54px;background-image:url("property-photos/78.jpg");background-position:center 54%;min-height:360px}
 @media(max-width:800px){.portal .parallax-portal{width:calc(100% + 40px);margin:28px -20px 38px;min-height:260px}}
+@media(max-width:800px){.parallax-panel{background-attachment:scroll!important;background-size:cover!important;background-position:center center!important;min-height:270px!important;display:block!important;background-color:#274b43}.parallax-exterior{background-image:url("property-photos/61.jpg")!important}.parallax-interior{background-image:url("property-photos/27.jpg")!important}.parallax-portal{background-image:url("property-photos/78.jpg")!important}}
