@@ -17,7 +17,6 @@
  type.onchange=syncType;checkIn.oninput=estimate;checkOut.oninput=estimate;
  property.onchange=()=>{if(property.value.startsWith('Home Away'))type.value='overnight';else if(type.value==='overnight')type.value='apartment';syncType();};
  document.addEventListener('click',e=>{const a=e.target.closest('[data-enquiry]');if(!a)return;const text=a.dataset.enquiry;type.value=text.startsWith('Home Away')?'overnight':'apartment';syncType();if(text.includes('Van Reenen'))property.selectedIndex=text.includes('2-bedroom')?1:2;else if(text.includes('21 Roode')&&text.includes('2-bedroom'))property.selectedIndex=3;else if(!text.startsWith('Home Away'))property.selectedIndex=4;});
- document.getElementById('saveEnquiry').onclick=()=>{if(!form.reportValidity())return;const fields=[...new FormData(form)].map(([key,value])=>`${key}: ${value}`).join('\n');saveText('hlonyane-enquiry.txt','ENQUIRY DRAFT — NOT SUBMITTED\n\n'+fields);document.getElementById('formStatus').textContent='Enquiry saved as a text file. No message has been sent.';};
  syncType();
 })();
 
