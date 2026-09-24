@@ -1,0 +1,29 @@
+/* Enhanced transparent logo, with the complete artwork kept visible. */
+.site-header { padding-top: 5px; padding-bottom: 5px; }
+.brand { display: block; flex-shrink: 0; }
+.brand img {
+  display: block;
+  width: 160px;
+  height: 174px;
+  object-fit: contain;
+  object-position: center;
+  mix-blend-mode: normal;
+}
+.hero { padding-bottom: 120px; }
+.site-footer img, footer img { filter: none; }
+.hero-art { background: none; opacity: 1; }
+.hero-slide { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 55%; opacity: 0; transition: opacity 1.2s ease; }
+.hero-slide.active { opacity: 1; }
+.hero-controls { position: absolute; bottom: 32px; left: 7vw; z-index: 2; display: flex; gap: 12px; align-items: center; }
+.hero-controls button { border: 1px solid #ffffff80; background: #171717b3; color: white; padding: 10px 14px; min-height: 44px; cursor: pointer; font: inherit; }
+.hero-controls button:hover, .hero-controls button:focus-visible { background: #a87500; }
+.hero-controls span { font-size: 14px; color: white; }
+@media (max-width: 800px) {
+  .hero { padding-bottom: 145px; }
+  .hero-controls { left: 20px; bottom: 70px; }
+}
+@media (prefers-reduced-motion: reduce) { .hero-slide { transition: none; } }
+@media (max-width: 800px) {
+  .site-header { padding-top: 4px; padding-bottom: 4px; }
+  .brand img { width: 122px; height: 132px; }
+}

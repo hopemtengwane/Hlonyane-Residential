@@ -1,0 +1,2 @@
+.portal .parallax-portal{width:calc(100% + 14vw);margin:36px -7vw 54px;background-image:url("property-photos/78.jpg");background-position:center 54%;min-height:360px}
+@media(max-width:800px){.portal .parallax-portal{width:calc(100% + 40px);margin:28px -20px 38px;min-height:260px}}

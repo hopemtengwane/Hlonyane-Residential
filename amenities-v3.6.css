@@ -1,0 +1,4 @@
+.amenities-grid li{gap:18px;min-height:260px}
+.amenity-icon{display:grid;place-items:center;width:112px;height:112px;border:1px solid #b8c9b2;border-radius:50%;background:linear-gradient(145deg,#fff 0%,#e3eadf 100%);box-shadow:0 6px 16px rgba(35,60,41,.11)}
+.amenity-icon img{display:block;width:108px;height:108px;object-fit:contain;filter:drop-shadow(0 5px 5px rgba(22,44,29,.18))}
+@media(max-width:700px){.amenities-grid li{min-height:228px}.amenity-icon{width:96px;height:96px}.amenity-icon img{width:92px;height:92px}}

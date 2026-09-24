@@ -1,0 +1,6 @@
+.parallax-panel{position:relative;width:100%;min-height:390px;background-position:center 52%;background-repeat:no-repeat;background-size:cover;background-attachment:fixed;isolation:isolate}
+.parallax-panel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,18,14,.16),rgba(10,18,14,.04) 55%,rgba(10,18,14,.14));pointer-events:none}
+.parallax-exterior{background-image:url("property-photos/61.jpg")}
+.parallax-interior{background-image:url("property-photos/27.jpg");background-position:center 58%}
+@media(max-width:800px){.parallax-panel{min-height:270px;background-attachment:scroll}}
+@media(prefers-reduced-motion:reduce){.parallax-panel{background-attachment:scroll}}

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Administrator sign in for Hlonyane Residential.">
+  <title>Admin sign in | Hlonyane Residential</title>
+  <link rel="stylesheet" href="styles.css"><link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-page">
+  <header class="admin-header"><a class="back-link" href="index.html">← Main website</a></header>
+  <main class="admin-shell">
+    <section class="admin-card" aria-labelledby="adminTitle">
+      <img class="admin-logo" src="assets/logo.png" alt="Hlonyane Residential">
+      <p class="eyebrow">SITE ADMINISTRATION</p>
+      <h1 id="adminTitle">Admin sign in</h1>
+      <p class="admin-intro">Manage the Hlonyane Residential website and properties.</p>
+      <div class="admin-login">
+        <label>Email address<input type="email" name="email" autocomplete="username" placeholder="you@example.com"></label>
+        <label>Password<input type="password" name="password" autocomplete="current-password" placeholder="Enter your password"></label>
+        <label class="admin-remember"><input type="checkbox" name="remember"> Remember me</label>
+        <a class="button button-solid admin-submit" href="admin-dashboard.html">Log in to admin ↗</a>
+      </div>
+    </section>
+  </main>
+  <script src="admin-auth.js"></script>
+</body>
+</html>

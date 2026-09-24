@@ -1,0 +1,8 @@
+(() => {
+  const art=document.querySelector('.hero-art'),media=window.PROPERTY_GALLERY||[];
+  const slides=media.map((photo,i)=>{const image=document.createElement('img');image.className='hero-slide'+(i===0?' active':'');image.dataset.src=photo.image;if(i===0)image.src=photo.image;image.alt=`Image ${photo.number}: ${photo.title}`;image.setAttribute('aria-hidden',String(i!==0));image.loading=i===0?'eager':'lazy';image.decoding='async';art.append(image);return image});
+  const count=document.getElementById('heroCount'),pause=document.getElementById('heroPause'),motion=window.matchMedia('(prefers-reduced-motion: reduce)');let index=0,paused=motion.matches,timer;
+  function show(next){index=(next+slides.length)%slides.length;for(const i of [index,(index+1)%slides.length])if(!slides[i].src)slides[i].src=slides[i].dataset.src;slides.forEach((slide,i)=>{slide.classList.toggle('active',i===index);slide.setAttribute('aria-hidden',String(i!==index))});count.textContent=`${String(index+1).padStart(2,'0')} / ${String(slides.length).padStart(2,'0')}`}
+  function schedule(){clearInterval(timer);pause.textContent=paused?'Play':'Pause';pause.setAttribute('aria-label',paused?'Play slideshow':'Pause slideshow');if(!paused&&!document.hidden)timer=setInterval(()=>show(index+1),6000)}
+  document.getElementById('heroPrev').addEventListener('click',()=>{show(index-1);schedule()});document.getElementById('heroNext').addEventListener('click',()=>{show(index+1);schedule()});pause.addEventListener('click',()=>{paused=!paused;schedule()});document.addEventListener('visibilitychange',schedule);motion.addEventListener('change',e=>{paused=e.matches;schedule()});show(0);schedule()
+})();

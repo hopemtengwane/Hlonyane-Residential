@@ -1,0 +1,9 @@
+-- Hlonyane Residential tenant portal schema (D1)
+CREATE TABLE IF NOT EXISTS properties (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, address TEXT NOT NULL, unit TEXT, furnishing TEXT NOT NULL DEFAULT 'Unfurnished', rent INTEGER NOT NULL DEFAULT 0, image_url TEXT, active INTEGER NOT NULL DEFAULT 1);
+CREATE TABLE IF NOT EXISTS tenants (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, mobile TEXT, emergency_contact TEXT, property_id INTEGER, furnishing TEXT NOT NULL DEFAULT 'Unfurnished', password_hash TEXT NOT NULL, active INTEGER NOT NULL DEFAULT 1, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(property_id) REFERENCES properties(id));
+CREATE TABLE IF NOT EXISTS tenant_presence (tenant_id INTEGER PRIMARY KEY, away_from TEXT, away_to TEXT, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(tenant_id) REFERENCES tenants(id));
+CREATE TABLE IF NOT EXISTS tenant_notices (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id INTEGER NOT NULL, starts_on TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Pending landlord acknowledgement', landlord_acknowledged_at TEXT, completed_at TEXT, email_status TEXT NOT NULL DEFAULT 'Queued', FOREIGN KEY(tenant_id) REFERENCES tenants(id));
+CREATE TABLE IF NOT EXISTS sessions (id TEXT PRIMARY KEY, tenant_id INTEGER NOT NULL, expires_at TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(tenant_id) REFERENCES tenants(id));
+CREATE TABLE IF NOT EXISTS community_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id INTEGER NOT NULL, body TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Pending approval', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY(tenant_id) REFERENCES tenants(id));
+CREATE INDEX IF NOT EXISTS idx_tenants_email ON tenants(email);
+CREATE INDEX IF NOT EXISTS idx_posts_status ON community_posts(status);
