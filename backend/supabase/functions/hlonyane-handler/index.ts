@@ -90,10 +90,16 @@ Deno.serve(async (request) => {
 
     const adminEmail = Deno.env.get('HLONYANE_ADMIN_EMAIL') || 'msindisi.mtengwane@gmail.com';
     const reference = makeReference();
-    const logoAttachment: ResendAttachment = {
+    const adminLogoAttachment: ResendAttachment = {
       path: 'https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png',
-      filename: 'hlonyane-residential-logo.png',
-      content_id: 'hlonyane-logo',
+      filename: 'hlonyane-residential-logo-admin.png',
+      content_id: 'hlonyane-logo-admin',
+      content_type: 'image/png'
+    };
+    const confirmationLogoAttachment: ResendAttachment = {
+      path: 'https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png',
+      filename: 'hlonyane-residential-logo-confirmation.png',
+      content_id: 'hlonyane-logo-confirmation',
       content_type: 'image/png'
     };
 
@@ -119,8 +125,12 @@ Deno.serve(async (request) => {
           <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:680px;background:#ffffff;border-collapse:separate;border-spacing:0;border-radius:18px;overflow:hidden">
             <tr><td height="8" bgcolor="#2f7d3b" style="height:8px;background:#2f7d3b;font-size:0;line-height:0">&nbsp;</td></tr>
             <tr><td style="padding:34px 40px 18px">
-              <img src="cid:hlonyane-logo" alt="Hlonyane Residential" width="260" style="display:block;width:260px;max-width:100%;height:auto;border:0;margin:0 0 26px">
               <h2 style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:26px;line-height:1.25;color:#174326">New Hlonyane Residential enquiry</h2>
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#000000" style="width:100%;background:#000000;border-collapse:collapse;margin:0 0 26px">
+                <tr><td align="left" style="padding:18px 20px;background:#000000">
+                  <img src="cid:hlonyane-logo-admin" alt="Hlonyane Residential" width="300" style="display:block;width:300px;max-width:100%;height:auto;border:0">
+                </td></tr>
+              </table>
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;width:100%;font-family:Arial,sans-serif;font-size:15px;color:#253128">${detailRows}</table>
               <div style="margin-top:24px;padding:18px 20px;background:#f4f7f2;border-left:4px solid #2f7d3b;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#253128">
                 ${esc(message).replace(/\n/g, '<br>')}
@@ -136,7 +146,7 @@ Deno.serve(async (request) => {
       subject: adminSubject,
       html: adminHtml,
       replyTo: email,
-      attachments: [logoAttachment]
+      attachments: [adminLogoAttachment]
     });
 
     if (sendConfirmation) {
@@ -147,8 +157,12 @@ Deno.serve(async (request) => {
             <table role="presentation" width="680" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:680px;background:#ffffff;border-collapse:separate;border-spacing:0;border-radius:20px;overflow:hidden;border:1px solid #e1e4de">
               <tr><td height="9" bgcolor="#2f7d3b" style="height:9px;background:#2f7d3b;font-size:0;line-height:0">&nbsp;</td></tr>
               <tr><td style="padding:38px 40px 18px">
-                <img src="cid:hlonyane-logo" alt="Hlonyane Residential" width="280" style="display:block;width:280px;max-width:100%;height:auto;border:0;margin:0 0 30px">
-                <h1 style="margin:0 0 28px;font-family:Arial,sans-serif;font-size:31px;line-height:1.25;color:#173a24;font-weight:700">Thank you for contacting Hlonyane Residential</h1>
+                <h1 style="margin:0 0 24px;font-family:Arial,sans-serif;font-size:31px;line-height:1.25;color:#173a24;font-weight:700">Thank you for contacting Hlonyane Residential</h1>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#000000" style="width:100%;background:#000000;border-collapse:collapse;margin:0 0 30px">
+                  <tr><td align="left" style="padding:18px 20px;background:#000000">
+                    <img src="cid:hlonyane-logo-confirmation" alt="Hlonyane Residential" width="320" style="display:block;width:320px;max-width:100%;height:auto;border:0">
+                  </td></tr>
+                </table>
                 <p style="margin:0 0 18px;font-family:Arial,sans-serif;font-size:18px;line-height:1.6;color:#252b26">Hi ${esc(name)},</p>
                 <p style="margin:0 0 22px;font-family:Arial,sans-serif;font-size:17px;line-height:1.65;color:#252b26">Your enquiry has been received successfully by Hlonyane Residential.</p>
 
@@ -177,7 +191,7 @@ Deno.serve(async (request) => {
         to: email,
         subject: confirmationSubject,
         html: confirmationHtml,
-        attachments: [logoAttachment]
+        attachments: [confirmationLogoAttachment]
       });
     }
 
