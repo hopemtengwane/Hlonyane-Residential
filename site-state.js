@@ -18,6 +18,6 @@
     const overnight=state.overnight||{};
     const overnightImg=document.querySelector('.overnight-card>img'); if(overnight.image&&overnightImg) overnightImg.src=overnight.image;
     const overnightPrice=document.querySelector('.overnight-card .nightly-price'); if(overnight.price&&overnightPrice) overnightPrice.innerHTML=overnight.price+' <span>per night</span>';
-    document.querySelectorAll('.parallax-panel').forEach((el,i)=>{const value=state.parallax&&state.parallax[String(i)];if(value)el.style.backgroundImage=`url("${value}")`});
+    document.querySelectorAll('.parallax-panel').forEach((el,i)=>{const fallback=['property-photos/61.jpg','property-photos/27.jpg','property-photos/78.jpg'][i];const value=state.parallax&&state.parallax[String(i)]||fallback;if(value){el.style.backgroundImage=`url("${value}")`;let mobile=el.querySelector('.parallax-mobile-image');if(!mobile){mobile=document.createElement('img');mobile.className='parallax-mobile-image';mobile.alt=el.getAttribute('aria-label')||'';mobile.loading='lazy';el.append(mobile)}mobile.src=value}});
   });
 })();
