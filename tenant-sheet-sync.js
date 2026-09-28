@@ -14,6 +14,22 @@
   async function syncNow({quiet=false}={}){if(syncing){pending=true;return}syncing=true;try{const list=rows();const result=await post('replaceTenants',{tenants:list});if(!quiet)toast(`Tenant register synced to Google Sheets · ${result.count} tenant${result.count===1?'':'s'}`);document.documentElement.dataset.tenantSheetSync='ok'}catch(error){console.error('Tenant sheet sync:',error);document.documentElement.dataset.tenantSheetSync='error';if(!quiet)toast(error.message||'Unable to sync tenant register.')}finally{syncing=false;if(pending){pending=false;syncNow({quiet:true})}}}
   function schedule(){clearTimeout(timer);timer=setTimeout(()=>syncNow({quiet:true}),900)}
   function addStatus(){const section=document.querySelector('#tenantRegister')?.closest('.cms-section');if(!section||section.querySelector('.tenant-sheet-status'))return;const note=document.createElement('p');note.className='admin-note tenant-sheet-status';note.textContent=configured()?'Google Sheets sync is connected. Tenant additions, edits and removals are mirrored automatically.':'Google Sheets sync is waiting for the Apps Script deployment URL.';section.querySelector('.cms-section-head')?.after(note)}
+
+  // admin-app redraws a tenant row after a field change. Preserve the exact open row
+  // by position so a new tenant does not collapse before an email address exists.
+  document.addEventListener('change',event=>{
+    const target=event.target;
+    if(!target?.dataset?.tenant)return;
+    const row=target.closest('#tenantRegister .tenant-row');
+    if(!row||!row.open)return;
+    const rowIndex=[...document.querySelectorAll('#tenantRegister .tenant-row')].indexOf(row);
+    if(rowIndex<0)return;
+    setTimeout(()=>{
+      const replacement=document.querySelectorAll('#tenantRegister .tenant-row')[rowIndex];
+      if(replacement)replacement.open=true;
+    },0);
+  },true);
+
   document.addEventListener('input',event=>{if(event.target.closest('#tenantRegister')&&event.target.dataset.tenant)schedule()});
   document.addEventListener('change',event=>{if(event.target.closest('#tenantRegister')&&event.target.dataset.tenant)schedule()});
   document.addEventListener('click',event=>{if(event.target.id==='addTenant'||event.target.dataset.tenantRemove!==undefined)setTimeout(()=>syncNow({quiet:false}),0);if(event.target.id==='saveTenantRegister')setTimeout(()=>syncNow({quiet:false}),0)},true);
