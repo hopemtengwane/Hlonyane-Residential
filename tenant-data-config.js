@@ -1,0 +1,1 @@
+window.HLONYANE_TENANT_DATA_API_URL='';
