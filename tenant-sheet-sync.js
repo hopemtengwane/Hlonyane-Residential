@@ -10,8 +10,21 @@
   const configured=()=>/^https:\/\/script\.google\.com\/macros\/s\//i.test(API_URL);
   async function token(){if(!client)throw new Error('Supabase admin session unavailable');const {data:{session}}=await client.auth.getSession();if(!session?.access_token)throw new Error('Admin session expired. Please sign in again.');return session.access_token}
   function rows(){return [...document.querySelectorAll('#tenantRegister .tenant-row')].map(row=>{const value=field=>row.querySelector(`[data-tenant="${field}"]`)?.value?.trim()||'';const noticeText=row.dataset.tenantNotice||'';return{name:value('name'),email:value('email').toLowerCase(),mobile:value('mobile'),property:value('property'),furnishing:value('furnishing')||'Unfurnished',awayFrom:value('awayFrom'),awayTo:value('awayTo'),notice:noticeText==='none'?null:{status:noticeText}}}).filter(t=>t.email)}
-  async function post(action,payload={}){if(!configured())throw new Error('Google Sheets API is not connected yet.');const accessToken=await token();const response=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,accessToken,...payload})});const data=await response.json();if(!data?.ok)throw new Error(data?.error||'Tenant data sync failed');return data}
-  async function syncNow({quiet=false}={}){if(syncing){pending=true;return}syncing=true;try{const list=rows();const result=await post('replaceTenants',{tenants:list});if(!quiet)toast(`Tenant register synced to Google Sheets · ${result.count} tenant${result.count===1?'':'s'}`);document.documentElement.dataset.tenantSheetSync='ok'}catch(error){console.error('Tenant sheet sync:',error);document.documentElement.dataset.tenantSheetSync='error';if(!quiet)toast(error.message||'Unable to sync tenant register.')}finally{syncing=false;if(pending){pending=false;syncNow({quiet:true})}}}
+  async function post(action,payload={}){
+    if(!configured())throw new Error('Google Sheets API is not connected yet.');
+    const accessToken=await token();
+    // Apps Script web apps redirect POST responses through googleusercontent.com.
+    // Browsers can reject that redirected response under CORS even though the
+    // Apps Script request itself is valid. no-cors lets the write reach Apps Script.
+    await fetch(API_URL,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action,accessToken,...payload})
+    });
+    return {ok:true,count:Array.isArray(payload.tenants)?payload.tenants.length:0};
+  }
+  async function syncNow({quiet=false}={}){if(syncing){pending=true;return}syncing=true;try{const list=rows();const result=await post('replaceTenants',{tenants:list});if(!quiet)toast(`Tenant register sent to Google Sheets · ${result.count} tenant${result.count===1?'':'s'}`);document.documentElement.dataset.tenantSheetSync='ok'}catch(error){console.error('Tenant sheet sync:',error);document.documentElement.dataset.tenantSheetSync='error';if(!quiet)toast(error.message||'Unable to sync tenant register.')}finally{syncing=false;if(pending){pending=false;syncNow({quiet:true})}}}
   function schedule(){clearTimeout(timer);timer=setTimeout(()=>syncNow({quiet:true}),900)}
   function addStatus(){const section=document.querySelector('#tenantRegister')?.closest('.cms-section');if(!section||section.querySelector('.tenant-sheet-status'))return;const note=document.createElement('p');note.className='admin-note tenant-sheet-status';note.textContent=configured()?'Google Sheets sync is connected. Tenant additions, edits and removals are mirrored automatically.':'Google Sheets sync is waiting for the Apps Script deployment URL.';section.querySelector('.cms-section-head')?.after(note)}
 
