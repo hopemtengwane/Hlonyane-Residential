@@ -1,32 +1,119 @@
 (() => {
-  const SESSION_KEY = 'hlonyaneAdminSessionV1';
-  const ADMIN_EMAIL = 'msindisi.mtengwane@gmail.com';
-  const ADMIN_PASSWORD = '13592468';
+  const SUPABASE_URL = 'https://aovespfbrgctyxhxssji.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
+  const HLONYANE_ADMINS = new Set([
+    'msindisi.mtengwane@gmail.com',
+    'nomondehlonyane@gmail.com'
+  ]);
   const isDashboard = /admin-dashboard\.html$/i.test(location.pathname);
-  if (isDashboard && !localStorage.getItem(SESSION_KEY)) {
-    location.replace('admin.html');
-    return;
+  const client = window.supabase?.createClient
+    ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+        auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+      })
+    : null;
+
+  const normalise = value => String(value || '').trim().toLowerCase();
+  const isAllowed = user => !!user?.email && HLONYANE_ADMINS.has(normalise(user.email));
+  const setStatus = message => {
+    let status = document.querySelector('.admin-login-status');
+    if (!status) {
+      status = document.createElement('p');
+      status.className = 'admin-login-status';
+      status.setAttribute('role', 'status');
+      document.querySelector('.admin-login')?.append(status);
+    }
+    status.textContent = message || '';
+  };
+  const loadScript = src => new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.body.append(script);
+  });
+
+  async function guardDashboard() {
+    if (!client) {
+      location.replace('admin.html?error=supabase');
+      return;
+    }
+    const { data: { session } } = await client.auth.getSession();
+    const user = session?.user;
+    if (!user || !isAllowed(user)) {
+      if (session) await client.auth.signOut();
+      location.replace('admin.html?error=unauthorised');
+      return;
+    }
+    window.HLONYANE_ADMIN_USER = user;
+    document.documentElement.classList.add('admin-authorised');
+    try {
+      await loadScript('admin-property-migration.js?v=20260928-1');
+      await loadScript('admin-app.js');
+    } catch (error) {
+      console.error('Unable to load Hlonyane admin workspace:', error);
+    }
   }
-  const login = document.querySelector('.admin-login');
-  const button = document.querySelector('.admin-submit');
-  if (login && button) {
+
+  async function initLogin() {
+    const login = document.querySelector('.admin-login');
+    const button = document.querySelector('.admin-submit');
+    if (!login || !button) return;
+
+    if (!client) {
+      setStatus('Admin sign-in service is unavailable.');
+      button.setAttribute('aria-disabled', 'true');
+      return;
+    }
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('error') === 'unauthorised') setStatus('This account is not authorised for Hlonyane Admin.');
+    if (params.get('error') === 'supabase') setStatus('Admin sign-in service is unavailable.');
+
+    const { data: { session } } = await client.auth.getSession();
+    if (session?.user && isAllowed(session.user)) {
+      location.replace('admin-dashboard.html');
+      return;
+    }
+    if (session?.user && !isAllowed(session.user)) await client.auth.signOut();
+
     const email = login.querySelector('input[name="email"]');
     const password = login.querySelector('input[name="password"]');
-    button.addEventListener('click', event => {
+    button.addEventListener('click', async event => {
       event.preventDefault();
-      const enteredEmail = (email?.value || '').trim().toLowerCase();
+      const enteredEmail = normalise(email?.value);
       const enteredPassword = password?.value || '';
-      if (enteredEmail !== ADMIN_EMAIL || enteredPassword !== ADMIN_PASSWORD) {
-        password?.setCustomValidity('Incorrect admin email or password.');
-        password?.reportValidity();
-        setTimeout(() => password?.setCustomValidity(''), 2500);
+      if (!enteredEmail || !enteredPassword) {
+        setStatus('Enter your email address and password.');
         return;
       }
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ email: ADMIN_EMAIL, signedInAt: new Date().toISOString() }));
-      location.href = button.getAttribute('href') || 'admin-dashboard.html';
+
+      button.setAttribute('aria-disabled', 'true');
+      button.textContent = 'Signing in…';
+      setStatus('');
+      const { data, error } = await client.auth.signInWithPassword({ email: enteredEmail, password: enteredPassword });
+      if (error || !data?.user) {
+        setStatus('Incorrect email address or password.');
+        button.removeAttribute('aria-disabled');
+        button.textContent = 'Log in to admin ↗';
+        return;
+      }
+      if (!isAllowed(data.user)) {
+        await client.auth.signOut();
+        setStatus('This account is not authorised for Hlonyane Admin.');
+        button.removeAttribute('aria-disabled');
+        button.textContent = 'Log in to admin ↗';
+        return;
+      }
+      location.href = 'admin-dashboard.html';
     });
   }
-  document.querySelector('.workspace-signout')?.addEventListener('click', () => {
-    localStorage.removeItem(SESSION_KEY);
+
+  document.querySelector('.workspace-signout')?.addEventListener('click', async event => {
+    event.preventDefault();
+    if (client) await client.auth.signOut();
+    location.href = 'admin.html';
   });
+
+  if (isDashboard) guardDashboard();
+  else initLogin();
 })();
