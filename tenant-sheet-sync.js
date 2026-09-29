@@ -2,40 +2,45 @@
   const SUPABASE_URL='https://aovespfbrgctyxhxssji.supabase.co';
   const SUPABASE_KEY='sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
   const API_URL=String(window.HLONYANE_TENANT_DATA_API_URL||'').trim();
-  const client=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
   const TENANT_KEY='hlonyaneTenantRegisterV1';
-  const LOAD_STAMP='hlonyaneTenantSheetLoadedV2';
-  let timer=null;
+  const client=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
   let syncing=false;
-  let pending=false;
-  const toast=message=>{const el=document.querySelector('#cmsToast');if(!el)return;el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)};
+
   const configured=()=>/^https:\/\/script\.google\.com\/macros\/s\//i.test(API_URL);
+  const toast=message=>{const el=document.querySelector('#cmsToast');if(!el)return;el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3200)};
   const isDemoTenant=t=>{
     const email=String(t?.email||'').trim().toLowerCase();
     const mobile=String(t?.mobile||'').trim();
     const property=String(t?.property||'').trim();
     const password=String(t?.password||'').trim();
     if(email==='thabiso@example.com'||email==='roode.tenant@example.com')return true;
-    if(email==='msindisi.mtengwane@gmail.com'&&(password==='13592468'||mobile==='+27 72 000 0000'||(/Unit 7/i.test(property)&&String(t?.furnishing||'')==='Furnished')))return true;
-    return false;
+    return email==='msindisi.mtengwane@gmail.com'&&(password==='13592468'||mobile==='+27 72 000 0000'||(/Unit 7/i.test(property)&&String(t?.furnishing||'')==='Furnished'));
   };
-  function cleanStoredRegister(){
-    try{
-      const list=JSON.parse(localStorage.getItem(TENANT_KEY)||'[]');
-      if(!Array.isArray(list))return;
-      const cleaned=list.filter(t=>!isDemoTenant(t)).map(t=>{const copy={...t};delete copy.password;return copy});
-      if(JSON.stringify(cleaned)!==JSON.stringify(list))localStorage.setItem(TENANT_KEY,JSON.stringify(cleaned));
-    }catch(e){}
+
+  function status(message,type='info'){
+    const host=document.querySelector('#tenantRegister');
+    if(!host)return;
+    let el=document.querySelector('#tenantDatabaseStatus');
+    if(!el){
+      el=document.createElement('div');
+      el.id='tenantDatabaseStatus';
+      el.style.cssText='margin:0 0 16px;padding:12px 14px;border:1px solid #d7ded8;background:#f7faf7;font-weight:600;color:#355146;display:flex;align-items:center;justify-content:space-between;gap:12px;';
+      host.parentElement?.insertBefore(el,host);
+    }
+    el.dataset.type=type;
+    el.style.borderColor=type==='error'?'#d98b83':type==='ok'?'#8fc19d':'#d7ded8';
+    el.style.background=type==='error'?'#fff3f1':type==='ok'?'#f1faf3':'#f7faf7';
+    el.innerHTML=`<span>${message}</span>${type==='error'?'<button type="button" id="retryTenantLoad" class="cms-save" style="padding:8px 12px">Retry</button>':''}`;
+    document.querySelector('#retryTenantLoad')?.addEventListener('click',()=>loadRemoteTenants({force:true}));
   }
-  function removeDemoRows(){
-    document.querySelectorAll('#tenantRegister .tenant-row').forEach(row=>{
-      const value=field=>row.querySelector(`[data-tenant="${field}"]`)?.value?.trim()||'';
-      if(isDemoTenant({email:value('email'),mobile:value('mobile'),property:value('property'),furnishing:value('furnishing'),password:value('password')}))row.remove();
-    });
-    document.querySelectorAll('.tenant-sheet-status').forEach(el=>el.remove());
+
+  async function token(){
+    if(!client)throw new Error('Supabase Admin session is unavailable.');
+    const {data:{session}}=await client.auth.getSession();
+    if(!session?.access_token)throw new Error('Admin session expired. Please sign in again.');
+    return session.access_token;
   }
-  cleanStoredRegister();
-  async function token(){if(!client)throw new Error('Supabase admin session unavailable');const {data:{session}}=await client.auth.getSession();if(!session?.access_token)throw new Error('Admin session expired. Please sign in again.');return session.access_token}
+
   const normaliseTenant=t=>{
     const property=[String(t?.Property||'').trim(),String(t?.Unit||'').trim()].filter(Boolean).join(' · ');
     const noticeStart=String(t?.['Notice Start']||'').trim();
@@ -60,66 +65,104 @@
       photo:String(t?.['Profile Photo']||'').trim()
     };
   };
+
+  async function postJson(action,payload={}){
+    const accessToken=await token();
+    const response=await fetch(API_URL,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action,accessToken,...payload}),
+      cache:'no-store'
+    });
+    if(!response.ok)throw new Error(`Tenant database returned HTTP ${response.status}.`);
+    const result=await response.json();
+    if(!result?.ok)throw new Error(result?.error||'Tenant database rejected the request.');
+    return result;
+  }
+
+  async function jsonpList(accessToken){
+    return await new Promise((resolve,reject)=>{
+      const cb='hlonyaneTenantList_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+      const script=document.createElement('script');
+      let settled=false;
+      const finish=(value,error)=>{if(settled)return;settled=true;clearTimeout(timer);try{delete window[cb]}catch(e){}script.remove();error?reject(error):resolve(value)};
+      window[cb]=value=>finish(value,null);
+      script.onerror=()=>finish(null,new Error('The tenant database endpoint could not be reached.'));
+      script.src=API_URL+'?action=admin.listTenants&accessToken='+encodeURIComponent(accessToken)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
+      document.head.append(script);
+      const timer=setTimeout(()=>finish(null,new Error('Tenant database request timed out.')),10000);
+    });
+  }
+
+  function renderFromDatabase(tenants){
+    const previous=localStorage.getItem(TENANT_KEY)||'[]';
+    const next=JSON.stringify(tenants);
+    localStorage.setItem(TENANT_KEY,next);
+    if(previous!==next){
+      sessionStorage.setItem('hlonyaneTenantDatabaseRefreshPending','1');
+      location.reload();
+      return false;
+    }
+    if(sessionStorage.getItem('hlonyaneTenantDatabaseRefreshPending'))sessionStorage.removeItem('hlonyaneTenantDatabaseRefreshPending');
+    return true;
+  }
+
   async function loadRemoteTenants(){
-    if(!configured())return;
+    if(!configured()){
+      status('Tenant database is not configured.','error');
+      return {ok:false,error:'not-configured'};
+    }
+    status('Loading enrolled tenants from the database…');
     try{
       const accessToken=await token();
-      const payload=await new Promise((resolve,reject)=>{
-        const cb='hlonyaneTenantList_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-        const script=document.createElement('script');
-        let settled=false;
-        const done=(value,error)=>{if(settled)return;settled=true;clearTimeout(timeout);try{delete window[cb]}catch(e){}script.remove();error?reject(error):resolve(value)};
-        window[cb]=value=>done(value,null);
-        script.onerror=()=>done(null,new Error('Unable to load tenant register from Google Sheets.'));
-        script.src=API_URL+'?action=admin.listTenants&accessToken='+encodeURIComponent(accessToken)+'&callback='+encodeURIComponent(cb)+'&_='+Date.now();
-        document.head.append(script);
-        const timeout=setTimeout(()=>done(null,new Error('Tenant register load timed out.')),8000);
-      });
+      let payload;
+      try{payload=await postJson('admin.listTenants')}catch(postError){
+        console.warn('POST tenant load failed, trying JSONP fallback:',postError);
+        payload=await jsonpList(accessToken);
+      }
       if(!payload?.ok)throw new Error(payload?.error||'Unable to load tenant register.');
       const tenants=(Array.isArray(payload.tenants)?payload.tenants:[]).map(normaliseTenant).filter(t=>t.email&&!isDemoTenant(t));
-      const previous=localStorage.getItem(TENANT_KEY)||'[]';
-      const next=JSON.stringify(tenants);
-      localStorage.setItem(TENANT_KEY,next);
-      const signature=tenants.map(t=>`${t.tenantId}|${t.email}|${t.property}|${t.furnishing}|${t.awayFrom}|${t.awayTo}|${t.notice?.status||''}|${t.notice?.startsOn||''}`).join('||');
-      const priorStamp=sessionStorage.getItem(LOAD_STAMP)||'';
-      if(previous!==next&&priorStamp!==signature){
-        sessionStorage.setItem(LOAD_STAMP,signature);
-        location.reload();
-        return;
-      }
-      sessionStorage.setItem(LOAD_STAMP,signature);
-      removeDemoRows();
       document.documentElement.dataset.tenantSheetLoad='ok';
+      if(!renderFromDatabase(tenants))return {ok:true,count:tenants.length,reloading:true};
+      status(`Database connected · ${tenants.length} enrolled tenant${tenants.length===1?'':'s'} loaded.`,'ok');
+      return {ok:true,count:tenants.length};
     }catch(error){
-      console.error('Tenant sheet load:',error);
+      console.error('Tenant database load:',error);
       document.documentElement.dataset.tenantSheetLoad='error';
+      status(`Tenant database could not be loaded: ${error.message||error}`,'error');
+      return {ok:false,error:String(error.message||error)};
     }
   }
-  function rows(){removeDemoRows();return [...document.querySelectorAll('#tenantRegister .tenant-row')].map(row=>{const value=field=>row.querySelector(`[data-tenant="${field}"]`)?.value?.trim()||'';const noticeText=row.dataset.tenantNotice||'';return{name:value('name'),email:value('email').toLowerCase(),mobile:value('mobile'),property:value('property'),furnishing:value('furnishing')||'Unfurnished',awayFrom:value('awayFrom'),awayTo:value('awayTo'),notice:noticeText==='none'?null:{status:noticeText}}}).filter(t=>t.email&&!isDemoTenant(t))}
-  async function post(action,payload={}){
-    if(!configured())throw new Error('Google Sheets API is not connected yet.');
-    const accessToken=await token();
-    await fetch(API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,accessToken,...payload})});
-    return {ok:true,count:Array.isArray(payload.tenants)?payload.tenants.length:0};
-  }
-  async function syncNow({quiet=false}={}){if(syncing){pending=true;return}syncing=true;try{const list=rows();const result=await post('admin.syncTenants',{tenants:list});if(!quiet)toast(`Tenant register sent to Google Sheets · ${result.count} tenant${result.count===1?'':'s'}`);document.documentElement.dataset.tenantSheetSync='ok'}catch(error){console.error('Tenant sheet sync:',error);document.documentElement.dataset.tenantSheetSync='error';if(!quiet)toast(error.message||'Unable to sync tenant register.')}finally{syncing=false;if(pending){pending=false;syncNow({quiet:true})}}}
-  function schedule(){clearTimeout(timer);timer=setTimeout(()=>syncNow({quiet:true}),900)}
 
-  document.addEventListener('change',event=>{
-    const target=event.target;
-    if(!target?.dataset?.tenant)return;
-    const row=target.closest('#tenantRegister .tenant-row');
-    if(!row||!row.open)return;
-    const rowIndex=[...document.querySelectorAll('#tenantRegister .tenant-row')].indexOf(row);
-    if(rowIndex<0)return;
-    setTimeout(()=>{removeDemoRows();const replacement=document.querySelectorAll('#tenantRegister .tenant-row')[rowIndex];if(replacement)replacement.open=true;},0);
+  function rows(){
+    return [...document.querySelectorAll('#tenantRegister .tenant-row')].map(row=>{
+      const value=field=>row.querySelector(`[data-tenant="${field}"]`)?.value?.trim()||'';
+      const noticeText=row.dataset.tenantNotice||'';
+      return {name:value('name'),email:value('email').toLowerCase(),mobile:value('mobile'),property:value('property'),furnishing:value('furnishing')||'Unfurnished',awayFrom:value('awayFrom'),awayTo:value('awayTo'),notice:noticeText==='none'?null:{status:noticeText}};
+    }).filter(t=>t.email&&!isDemoTenant(t));
+  }
+
+  async function syncNow({quiet=false}={}){
+    if(syncing)return;
+    syncing=true;
+    try{
+      const list=rows();
+      const result=await postJson('admin.syncTenants',{tenants:list});
+      if(!quiet)toast(`Tenant register saved · ${result.count??list.length} tenant${(result.count??list.length)===1?'':'s'}`);
+      status(`Database connected · ${list.length} enrolled tenant${list.length===1?'':'s'} loaded.`,'ok');
+      document.documentElement.dataset.tenantSheetSync='ok';
+    }catch(error){
+      console.error('Tenant database sync:',error);
+      document.documentElement.dataset.tenantSheetSync='error';
+      if(!quiet)toast(error.message||'Unable to save tenant register.');
+      status(`Tenant database save failed: ${error.message||error}`,'error');
+    }finally{syncing=false}
+  }
+
+  document.addEventListener('click',event=>{
+    if(event.target.id==='saveTenantRegister')setTimeout(()=>syncNow({quiet:false}),0);
   },true);
 
-  document.addEventListener('input',event=>{if(event.target.closest('#tenantRegister')&&event.target.dataset.tenant)schedule()});
-  document.addEventListener('change',event=>{if(event.target.closest('#tenantRegister')&&event.target.dataset.tenant)schedule()});
-  document.addEventListener('click',event=>{if(event.target.id==='addTenant'||event.target.dataset.tenantRemove!==undefined)setTimeout(()=>{removeDemoRows();syncNow({quiet:false})},0);if(event.target.id==='saveTenantRegister')setTimeout(()=>{removeDemoRows();syncNow({quiet:false})},0)},true);
-  const observer=new MutationObserver(()=>removeDemoRows());observer.observe(document.documentElement,{childList:true,subtree:true});
-  removeDemoRows();
-  loadRemoteTenants();
-  window.HLONYANE_TENANT_SHEET={sync:syncNow,rows,post,configured,load:loadRemoteTenants};
+  window.HLONYANE_TENANT_SHEET={sync:syncNow,rows,configured,load:loadRemoteTenants};
+  window.HLONYANE_TENANT_SHEET_READY=loadRemoteTenants();
 })();
