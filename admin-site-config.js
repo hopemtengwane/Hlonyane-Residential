@@ -59,14 +59,16 @@
     let local={};try{local=JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){}
     const remote=await publicConfig();
     if(remote&&Object.keys(remote).length){
-      const merged={...local,...remote};
-      merged.propertyPhotos={...(local.propertyPhotos||{}),...(remote.propertyPhotos||{})};
-      if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
-      else if(local.heroPhotos)merged.heroPhotos=local.heroPhotos;
-      merged.parallax={...(local.parallax||{}),...(remote.parallax||{})};
+      // On an Admin browser, preserve the locally edited state if it exists; use the
+      // central config as the base so a fresh device still receives all saved settings.
+      const merged={...remote,...local};
+      merged.propertyPhotos={...(remote.propertyPhotos||{}),...(local.propertyPhotos||{})};
+      if(local.heroPhotos?.length)merged.heroPhotos=local.heroPhotos;
+      else if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
+      merged.parallax={...(remote.parallax||{}),...(local.parallax||{})};
       const priced=window.HLONYANE_APPLY_PRICING_POLICY?window.HLONYANE_APPLY_PRICING_POLICY(merged):merged;
       localStorage.setItem(KEY,JSON.stringify(priced));
-      return {source:'sheet',config:priced};
+      return {source:'sheet+browser',config:priced};
     }
     const priced=window.HLONYANE_APPLY_PRICING_POLICY?window.HLONYANE_APPLY_PRICING_POLICY(local):local;
     localStorage.setItem(KEY,JSON.stringify(priced));
