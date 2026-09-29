@@ -1,11 +1,8 @@
-/* Browser state with central Google Sheets configuration overlay. */
+/* Browser state with GitHub-backed central configuration overlay. */
 (() => {
   window.HLONYANE_TENANT_DATA_API_URL='https://script.google.com/macros/s/AKfycbxmWcEaOSSUJ0Pe9S6fxI7_MCghmcoVXwKJpeVggGapI_qF_XoOoXyQ-ATMdQyxsKF5-g/exec';
   const key='hlonyaneSiteStateV41';
-  const cacheKey='hlonyaneCentralConfigCachedV1';
-  const firstCentralLoad=!localStorage.getItem(cacheKey);
-  if(firstCentralLoad)document.documentElement.style.visibility='hidden';
-  const reveal=()=>{document.documentElement.style.visibility='';document.documentElement.classList.add('site-config-ready')};
+  const configUrl='https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/site-config.json';
   const base=()=>({heroPhotos:null,heroText:null,propertyPhotos:{},properties:null,overnight:{},parallax:{},deletedComments:[]});
   const overnightBachelor={name:'Overnight Bachelor Rooms',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:null,baths:null,area:null,rent:750,furnished:null,type:'4 bachelor rooms · priced per room',photoGroup:'roode',heroNumber:45,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
   const commune={name:'4 Bedroom Commune',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:4,baths:2,area:null,rent:600,furnished:null,type:'4 communal rooms · priced per room',photoGroup:'roode-2bed-furnished',heroNumber:11,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
@@ -46,47 +43,39 @@
 
   let state=base();
   try{state={...state,...JSON.parse(localStorage.getItem(key)||'{}')}}catch(e){}
-  if(!Array.isArray(state.properties)||!state.properties.length) state.properties=defaultProperties.map(p=>({...p,excludeNumbers:[...(p.excludeNumbers||[])]}));
+  if(!Array.isArray(state.properties)||!state.properties.length)state.properties=defaultProperties.map(p=>({...p,excludeNumbers:[...(p.excludeNumbers||[])]}));
   else state.properties=migrateProperties(state.properties);
   state.overnight={...(state.overnight||{}),price:'R 750'};
   try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}
 
-  try{
-    const cb='hlonyanePublicConfig_'+Date.now()+'_'+Math.random().toString(36).slice(2);
-    const script=document.createElement('script');
-    let settled=false;
-    const finish=()=>{if(settled)return;settled=true;reveal();try{delete window[cb]}catch(e){}script.remove()};
-    window[cb]=payload=>{
-      try{
-        if(payload?.ok&&payload.config){
-          const current=JSON.parse(localStorage.getItem(key)||'{}');
-          const remote=payload.config;
-          const merged={...current,...remote};
-          merged.propertyPhotos={...(current.propertyPhotos||{}),...(remote.propertyPhotos||{})};
-          if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
-          else if(current.heroPhotos)merged.heroPhotos=current.heroPhotos;
-          merged.parallax={...(current.parallax||{}),...(remote.parallax||{})};
-          if(Array.isArray(merged.properties))merged.properties=migrateProperties(merged.properties);
-          merged.overnight={...(merged.overnight||{}),price:'R 750'};
-          const before=JSON.stringify(current),after=JSON.stringify(merged);
-          localStorage.setItem(key,after);
-          localStorage.setItem(cacheKey,'1');
-          if(before!==after){
-            settled=true;
-            location.reload();
-            return;
-          }
-        } else {
-          localStorage.setItem(cacheKey,'1');
+  const applyCentral=remote=>{
+    try{
+      if(!remote||typeof remote!=='object')return;
+      const current=JSON.parse(localStorage.getItem(key)||'{}');
+      const merged={...current,...remote};
+      merged.propertyPhotos={...(current.propertyPhotos||{}),...(remote.propertyPhotos||{})};
+      if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
+      else if(current.heroPhotos?.length)merged.heroPhotos=current.heroPhotos;
+      merged.parallax={...(current.parallax||{}),...(remote.parallax||{})};
+      if(Array.isArray(merged.properties))merged.properties=migrateProperties(merged.properties);
+      merged.overnight={...(merged.overnight||{}),price:'R 750'};
+      const before=JSON.stringify(current),after=JSON.stringify(merged);
+      localStorage.setItem(key,after);
+      if(before!==after){
+        const remoteStamp=String(remote?._meta?.updatedAt||'legacy');
+        const applied=sessionStorage.getItem('hlonyaneConfigAppliedStamp');
+        if(applied!==remoteStamp){
+          sessionStorage.setItem('hlonyaneConfigAppliedStamp',remoteStamp);
+          location.reload();
         }
-      }catch(e){console.warn('Unable to apply central site configuration',e)}
-      finish();
-    };
-    script.onerror=finish;
-    script.src=window.HLONYANE_TENANT_DATA_API_URL+'?action=site.getConfig&callback='+encodeURIComponent(cb)+'&_='+Date.now();
-    document.head.append(script);
-    setTimeout(finish,8000);
-  }catch(e){reveal()}
+      }
+    }catch(e){console.warn('Unable to apply central site configuration',e)}
+  };
+
+  fetch(configUrl+'?v='+Date.now(),{cache:'no-store'})
+    .then(response=>response.ok?response.json():null)
+    .then(applyCentral)
+    .catch(()=>{});
 
   window.SITE_STATE=state;
   window.HLONYANE_CONTACTS={phone:'072 455 9413',email:'msindisi.mtengwane@gmail.com',portalPhone:'072 455 9413',portalEmail:'msindisi.mtengwane@gmail.com',...(state.contacts||{})};
