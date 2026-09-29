@@ -5,6 +5,14 @@
   const base=()=>({heroPhotos:null,heroText:null,propertyPhotos:{},properties:null,overnight:{},parallax:{},deletedComments:[]});
   const overnightBachelor={name:'Overnight Bachelor Rooms',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:null,baths:null,area:null,rent:750,furnished:null,type:'4 bachelor rooms · priced per room',photoGroup:'roode',heroNumber:45,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
   const commune={name:'4 Bedroom Commune',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:4,baths:2,area:null,rent:600,furnished:null,type:'4 communal rooms · priced per room',photoGroup:'roode-2bed-furnished',heroNumber:11,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
+  const defaultProperties=[
+    {name:'New Flats',address:'4 Van Reenen Street',city:'Middelburg EC',count:7,vacant:2,vacancySample:true,beds:2,baths:1,area:null,rent:6000,furnished:9500,type:'2-bedroom apartments',photoGroup:'new',heroNumber:80,excludeNumbers:[100,101,102,103,104,105,106,107,108,109]},
+    {name:'New Flats',address:'4 Van Reenen Street',city:'Middelburg EC',count:17,vacant:4,vacancySample:true,beds:1,baths:1,area:null,rent:4500,furnished:8000,type:'1-bedroom / bachelor apartments',photoGroup:'new',heroNumber:60,excludeNumbers:[76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99]},
+    overnightBachelor,
+    commune,
+    {name:'21 Roode Street',address:'21 Roode Street',city:'Middelburg EC',count:null,vacant:null,beds:2,baths:null,area:null,rent:6000,furnished:9500,type:'2-bedroom apartments',photoGroup:'roode-2bed-furnished',heroNumber:11,excludeNumbers:[]},
+    {name:'21 Roode Street',address:'21 Roode Street',city:'Middelburg EC',count:10,vacant:3,vacancySample:true,beds:1,baths:1,area:null,rent:4500,furnished:8000,type:'1-bedroom apartments',photoGroup:'roode',heroNumber:45,excludeNumbers:[11,12,13,14,15,16,17,18,19,20,21]}
+  ];
 
   const applyPricing=props=>Array.isArray(props)?props.map(property=>{
     const p={...property};
@@ -34,7 +42,8 @@
 
   let state=base();
   try{state={...state,...JSON.parse(localStorage.getItem(key)||'{}')}}catch(e){}
-  if(Array.isArray(state.properties)) state.properties=migrateProperties(state.properties);
+  if(!Array.isArray(state.properties)||!state.properties.length) state.properties=defaultProperties.map(p=>({...p,excludeNumbers:[...(p.excludeNumbers||[])]}));
+  else state.properties=migrateProperties(state.properties);
   state.overnight={...(state.overnight||{}),price:'R 750'};
   try{localStorage.setItem(key,JSON.stringify(state))}catch(e){}
 
