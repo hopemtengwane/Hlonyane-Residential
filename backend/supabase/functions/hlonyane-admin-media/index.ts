@@ -18,6 +18,7 @@ const REPO_OWNER = 'hopemtengwane';
 const REPO_NAME = 'Hlonyane-Residential';
 const REPO_BRANCH = 'main';
 const SITE_CONFIG_PATH = 'site-config.json';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-iFuVnlZQaGJn4GrOianYgKckhZ_LOayMJNZgRml8k1VbI_sdBLBJazycGD1iL58pkw/exec';
 const ALLOWED_FOLDERS = new Set([
   'property-photos/admin',
   'hero-photos/admin',
@@ -59,7 +60,8 @@ const textToBase64 = (value: string) => bytesToBase64(new TextEncoder().encode(v
 
 const requireAdmin = async (request: Request) => {
   const auth = request.headers.get('authorization') || '';
-  if (!/^Bearer\s+\S+/i.test(auth)) throw new Error('Admin session required.');
+  const match = auth.match(/^Bearer\s+(\S+)/i);
+  if (!match) throw new Error('Admin session required.');
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
@@ -73,7 +75,7 @@ const requireAdmin = async (request: Request) => {
   const user = await response.json();
   const email = String(user?.email || '').trim().toLowerCase();
   if (!ALLOWED_ADMINS.has(email)) throw new Error('Not authorised for Hlonyane Admin.');
-  return { email, id: String(user?.id || '') };
+  return { email, id: String(user?.id || ''), accessToken: match[1] };
 };
 
 const saveSiteConfig = async (config: unknown, adminEmail: string, githubToken: string) => {
@@ -116,6 +118,22 @@ const saveSiteConfig = async (config: unknown, adminEmail: string, githubToken: 
   });
 };
 
+const callTenantBackend = async (action: string, payload: Record<string, unknown>, accessToken: string) => {
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, accessToken, ...payload }),
+    redirect: 'follow',
+  });
+  const text = await response.text();
+  let result: any = null;
+  try { result = JSON.parse(text); } catch (_) {}
+  if (!response.ok) throw new Error(result?.error || `Tenant backend returned HTTP ${response.status}.`);
+  if (!result || typeof result !== 'object') throw new Error('Tenant backend returned an invalid response.');
+  if (result.ok === false) throw new Error(result.error || 'Tenant backend rejected the request.');
+  return result;
+};
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return json({ error: 'POST required.' }, 405);
@@ -129,8 +147,20 @@ Deno.serve(async (request) => {
     if (contentType.includes('application/json')) {
       const body = await request.json().catch(() => ({}));
       if (String(body?.site || '').toLowerCase() !== 'hlonyane') return json({ error: 'Unsupported site.' }, 400);
-      if (body?.action !== 'saveSiteConfig') return json({ error: 'Unsupported action.' }, 400);
-      return await saveSiteConfig(body?.config || {}, admin.email, githubToken);
+
+      if (body?.action === 'saveSiteConfig') {
+        return await saveSiteConfig(body?.config || {}, admin.email, githubToken);
+      }
+      if (body?.action === 'listTenants') {
+        const result = await callTenantBackend('admin.listTenants', {}, admin.accessToken);
+        return json(result);
+      }
+      if (body?.action === 'syncTenants') {
+        const tenants = Array.isArray(body?.tenants) ? body.tenants : [];
+        const result = await callTenantBackend('admin.syncTenants', { tenants }, admin.accessToken);
+        return json(result);
+      }
+      return json({ error: 'Unsupported action.' }, 400);
     }
 
     const form = await request.formData();
