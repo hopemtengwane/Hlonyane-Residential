@@ -3,7 +3,7 @@
   if(!login)return;
   const email=document.querySelector('.tenant-login input[name="email"]');
   const code=document.querySelector('.tenant-login input[name="password"]');
-  const API=String(window.HLONYANE_TENANT_DATA_API_URL||'').trim();
+  const API=String(window.HLONYANE_TENANT_DATA_API_URL||'https://script.google.com/macros/s/AKfycbxmWcEaOSSUJ0Pe9S6fxI7_MCghmcoVXwKJpeVggGapI_qF_XoOoXyQ-ATMdQyxsKF5-g/exec').trim();
   const loginCopy=document.querySelector('.login-copy');
   const passwordLabel=code?.closest('label');
   const loginRow=document.querySelector('.tenant-login .login-row');
