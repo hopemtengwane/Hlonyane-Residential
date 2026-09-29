@@ -54,7 +54,11 @@ function doGet(e) {
     if (action === 'tenant.requestOtp') result = requestTenantOtp_(p.email || '');
     else if (action === 'tenant.verifyOtp') result = verifyTenantOtp_(p.email || '', p.code || '');
     else if (action === 'site.getConfig') result = getSiteConfig_();
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.3'};
+    else if (action === 'admin.listTenants') {
+      requireAdmin_(p.accessToken || '');
+      result = {ok:true, tenants:listTenants_()};
+    }
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.4'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
