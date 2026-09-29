@@ -1388,9 +1388,9 @@
     }
   ],
   "heroText": {
-    "kicker": "Residential spaces, thoughtfully managed",
-    "title": "A place to live.\nA place to belong.",
-    "intro": "Flats to call home and accommodation for an overnight stay. Discover Hlonyane Residential in Middelburg, Eastern Cape."
+    "kicker": "8Residential spaces, thoughtfully managed",
+    "title": "8A place to live.\nA place to belong.",
+    "intro": "8Flats to call home and accommodation for an overnight stay. Discover Hlonyane Residential in Middelburg, Eastern Cape."
   },
   "propertyPhotos": {
     "0": [
@@ -3664,6 +3664,6 @@
   "deletedComments": [],
   "contacts": null,
   "_meta": {
-    "updatedAt": 1790708190579
+    "updatedAt": 1790708235846
   }
 }
