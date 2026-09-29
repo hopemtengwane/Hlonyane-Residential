@@ -50,7 +50,7 @@
       await loadScript('pricing-policy.js?v=20260929-1');
       await loadScript('admin-site-config.js?v=20260929-2');
       await window.HLONYANE_ADMIN_SITE_CONFIG?.bootstrap();
-      await loadScript('admin-state-recovery.js?v=20260929-1');
+      await loadScript('admin-state-recovery.js?v=20260929-2');
       await loadScript('admin-property-migration.js?v=20260928-1');
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
