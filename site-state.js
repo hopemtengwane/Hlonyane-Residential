@@ -2,6 +2,10 @@
 (() => {
   window.HLONYANE_TENANT_DATA_API_URL='https://script.google.com/macros/s/AKfycbxmWcEaOSSUJ0Pe9S6fxI7_MCghmcoVXwKJpeVggGapI_qF_XoOoXyQ-ATMdQyxsKF5-g/exec';
   const key='hlonyaneSiteStateV41';
+  const cacheKey='hlonyaneCentralConfigCachedV1';
+  const firstCentralLoad=!localStorage.getItem(cacheKey);
+  if(firstCentralLoad)document.documentElement.style.visibility='hidden';
+  const reveal=()=>{document.documentElement.style.visibility='';document.documentElement.classList.add('site-config-ready')};
   const base=()=>({heroPhotos:null,heroText:null,propertyPhotos:{},properties:null,overnight:{},parallax:{},deletedComments:[]});
   const overnightBachelor={name:'Overnight Bachelor Rooms',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:null,baths:null,area:null,rent:750,furnished:null,type:'4 bachelor rooms · priced per room',photoGroup:'roode',heroNumber:45,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
   const commune={name:'4 Bedroom Commune',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:4,baths:2,area:null,rent:600,furnished:null,type:'4 communal rooms · priced per room',photoGroup:'roode-2bed-furnished',heroNumber:11,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
@@ -50,31 +54,39 @@
   try{
     const cb='hlonyanePublicConfig_'+Date.now()+'_'+Math.random().toString(36).slice(2);
     const script=document.createElement('script');
+    let settled=false;
+    const finish=()=>{if(settled)return;settled=true;reveal();try{delete window[cb]}catch(e){}script.remove()};
     window[cb]=payload=>{
       try{
         if(payload?.ok&&payload.config){
           const current=JSON.parse(localStorage.getItem(key)||'{}');
           const remote=payload.config;
           const merged={...current,...remote};
-          if(current.propertyPhotos&&!remote.propertyPhotos)merged.propertyPhotos=current.propertyPhotos;
-          if(current.heroPhotos&&!remote.heroPhotos)merged.heroPhotos=current.heroPhotos;
+          merged.propertyPhotos={...(current.propertyPhotos||{}),...(remote.propertyPhotos||{})};
+          if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
+          else if(current.heroPhotos)merged.heroPhotos=current.heroPhotos;
           merged.parallax={...(current.parallax||{}),...(remote.parallax||{})};
           if(Array.isArray(merged.properties))merged.properties=migrateProperties(merged.properties);
           merged.overnight={...(merged.overnight||{}),price:'R 750'};
           const before=JSON.stringify(current),after=JSON.stringify(merged);
           localStorage.setItem(key,after);
-          if(before!==after&&sessionStorage.getItem('hlonyaneCentralConfigReloaded')!=='1'){
-            sessionStorage.setItem('hlonyaneCentralConfigReloaded','1');
+          localStorage.setItem(cacheKey,'1');
+          if(before!==after){
+            settled=true;
             location.reload();
+            return;
           }
+        } else {
+          localStorage.setItem(cacheKey,'1');
         }
       }catch(e){console.warn('Unable to apply central site configuration',e)}
-      try{delete window[cb]}catch(e){}script.remove();
+      finish();
     };
-    script.onerror=()=>{try{delete window[cb]}catch(e){}script.remove()};
+    script.onerror=finish;
     script.src=window.HLONYANE_TENANT_DATA_API_URL+'?action=site.getConfig&callback='+encodeURIComponent(cb)+'&_='+Date.now();
     document.head.append(script);
-  }catch(e){}
+    setTimeout(finish,8000);
+  }catch(e){reveal()}
 
   window.SITE_STATE=state;
   window.HLONYANE_CONTACTS={phone:'072 455 9413',email:'msindisi.mtengwane@gmail.com',portalPhone:'072 455 9413',portalEmail:'msindisi.mtengwane@gmail.com',...(state.contacts||{})};
