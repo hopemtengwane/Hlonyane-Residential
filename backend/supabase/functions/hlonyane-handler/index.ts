@@ -37,7 +37,7 @@ const sendResend = async ({ to, subject, html, replyTo, attachments }: {
   attachments?: ResendAttachment[];
 }) => {
   const apiKey = Deno.env.get('RESEND_API_KEY');
-  const from = Deno.env.get('HLONYANE_FROM_EMAIL') || Deno.env.get('RESEND_FROM_EMAIL') || 'Hlonyane Residential <onboarding@resend.dev>';
+  const from = Deno.env.get('HLONYANE_FROM_EMAIL') || 'Hlonyane Residential <communication@hlonyaneresidential.co.za>';
   if (!apiKey) throw new Error('Resend is not configured: add RESEND_API_KEY.');
 
   const response = await fetch('https://api.resend.com/emails', {
@@ -88,7 +88,7 @@ Deno.serve(async (request) => {
       return json({ error: 'Name, email and message are required.' }, 400);
     }
 
-    const adminEmail = Deno.env.get('HLONYANE_ADMIN_EMAIL') || 'msindisi.mtengwane@gmail.com';
+    const adminEmail = Deno.env.get('HLONYANE_ADMIN_EMAIL') || 'communication@hlonyaneresidential.co.za';
     const reference = makeReference();
     const adminLogoAttachment: ResendAttachment = {
       path: 'https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/logo.png',
@@ -182,7 +182,7 @@ Deno.serve(async (request) => {
 
                 <p style="margin:0;font-family:Arial,sans-serif;font-size:15px;line-height:1.6;color:#f2f2f2">Regards,<br><strong>Hlonyane Residential Team</strong></p>
               </td></tr>
-              <tr><td bgcolor="#090909" style="padding:18px 40px;background:#090909;border-top:1px solid #202020;font-family:Arial,sans-serif;font-size:12px;line-height:1.5;color:#8f9890">Hlonyane Residential · Middelburg, Eastern Cape</td></tr>
+              <tr><td bgcolor="#090909" style="padding:18px 40px;background:#090909;border-top:1px solid #202020;font-family:Arial,sans-serif;font-size:12px;line-height:1.5;color:#8f9890">Hlonyane Residential · Middelburg, Eastern Cape · communication@hlonyaneresidential.co.za</td></tr>
             </table>
           </td></tr>
         </table>`;
@@ -191,6 +191,7 @@ Deno.serve(async (request) => {
         to: email,
         subject: confirmationSubject,
         html: confirmationHtml,
+        replyTo: 'communication@hlonyaneresidential.co.za',
         attachments: [confirmationLogoAttachment]
       });
     }
