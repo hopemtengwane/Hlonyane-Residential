@@ -3,17 +3,47 @@ const CONFIG = {
   supabaseUrl: 'https://aovespfbrgctyxhxssji.supabase.co',
   supabasePublishableKey: 'sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a',
   allowedAdmins: ['msindisi.mtengwane@gmail.com','nomondehlonyane@gmail.com'],
-  otpMinutes: 10
+  otpMinutes: 10,
+  fromEmail: 'Hlonyane Residential <communication@hlonyaneresidential.co.za>',
+  replyTo: 'communication@hlonyaneresidential.co.za'
 };
 
-function authorizeTenantMail() {
-  MailApp.sendEmail({
-    to: Session.getActiveUser().getEmail() || 'omnidatamanager@gmail.com',
-    subject: 'Hlonyane Tenant Portal mail authorization test',
-    htmlBody: '<p>The Hlonyane Tenant Portal email service has been authorized successfully.</p>',
-    name: 'Hlonyane Residential'
+function resendApiKey_() {
+  const key = PropertiesService.getScriptProperties().getProperty('RESEND_API_KEY');
+  if (!key) throw new Error('RESEND_API_KEY is not configured in Apps Script Project Settings > Script properties.');
+  return key;
+}
+
+function sendResend_(to, subject, html) {
+  const response = UrlFetchApp.fetch('https://api.resend.com/emails', {
+    method: 'post',
+    muteHttpExceptions: true,
+    contentType: 'application/json',
+    headers: {Authorization: 'Bearer ' + resendApiKey_()},
+    payload: JSON.stringify({
+      from: CONFIG.fromEmail,
+      to: [to],
+      subject: subject,
+      html: html,
+      reply_to: CONFIG.replyTo
+    })
   });
-  return 'Mail authorization complete';
+  const status = response.getResponseCode();
+  const body = response.getContentText() || '{}';
+  let result = {};
+  try { result = JSON.parse(body); } catch (e) {}
+  if (status < 200 || status >= 300) throw new Error(result.message || ('Resend rejected the email (' + status + ').'));
+  return result;
+}
+
+function testResendMail() {
+  const to = Session.getActiveUser().getEmail() || 'omnidatamanager@gmail.com';
+  sendResend_(
+    to,
+    'Hlonyane Residential email test',
+    '<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Resend is connected successfully.</p><p>This email was sent from <strong>communication@hlonyaneresidential.co.za</strong>.</p></div>'
+  );
+  return 'Resend test sent to ' + to;
 }
 
 function doGet(e) {
@@ -23,7 +53,7 @@ function doGet(e) {
     let result;
     if (action === 'tenant.requestOtp') result = requestTenantOtp_(p.email || '');
     else if (action === 'tenant.verifyOtp') result = verifyTenantOtp_(p.email || '', p.code || '');
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.1'};
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.2'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -99,12 +129,11 @@ function requestTenantOtp_(email) {
   }
   const code = String(Math.floor(100000 + Math.random() * 900000));
   CacheService.getScriptCache().put('tenant-otp:' + clean, code, CONFIG.otpMinutes * 60);
-  MailApp.sendEmail({
-    to: clean,
-    subject: 'Your Hlonyane Residential sign-in code',
-    htmlBody: '<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Your tenant portal sign-in code is:</p><p style="font-size:30px;font-weight:700;letter-spacing:6px">' + code + '</p><p>This code expires in ' + CONFIG.otpMinutes + ' minutes.</p><p>If you did not request this code, you can ignore this email.</p></div>',
-    name: 'Hlonyane Residential'
-  });
+  sendResend_(
+    clean,
+    'Your Hlonyane Residential sign-in code',
+    '<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Your tenant portal sign-in code is:</p><p style="font-size:30px;font-weight:700;letter-spacing:6px">' + code + '</p><p>This code expires in ' + CONFIG.otpMinutes + ' minutes.</p><p>If you did not request this code, you can ignore this email.</p><p style="margin-top:28px;color:#65727a;font-size:12px">Hlonyane Residential · communication@hlonyaneresidential.co.za</p></div>'
+  );
   return {ok:true, sent:true, expiresMinutes:CONFIG.otpMinutes};
 }
 
