@@ -16,6 +16,12 @@
 
   const readState=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}};
   const writeState=state=>localStorage.setItem(KEY,JSON.stringify(state));
+  const cloneGallery=()=>Array.isArray(window.PROPERTY_GALLERY)?window.PROPERTY_GALLERY.map(photo=>({...photo})):[];
+  const ensureHeroPhotos=state=>{
+    if(Array.isArray(state.heroPhotos)&&state.heroPhotos.length)return state.heroPhotos;
+    state.heroPhotos=cloneGallery();
+    return state.heroPhotos;
+  };
 
   async function token(){
     if(!client)throw new Error('Supabase admin session unavailable.');
@@ -72,13 +78,15 @@
     try{
       const state=readState();
       state.propertyPhotos=state.propertyPhotos||{};
-      state.heroPhotos=Array.isArray(state.heroPhotos)?state.heroPhotos:[];
       state.parallax=state.parallax||{};
       state.overnight=state.overnight||{};
 
       if(isHero){
+        const heroPhotos=ensureHeroPhotos(state);
         await uploadSequential(files,'hero-photos/admin',(path,file)=>{
-          state.heroPhotos.push({image:path,number:'admin',title:file.name.replace(/\.[^.]+$/,''),caption:file.name,categories:['hero'],orientation:'landscape'});
+          if(!heroPhotos.some(photo=>String(photo?.image||'')===path)){
+            heroPhotos.push({image:path,number:'admin',title:file.name.replace(/\.[^.]+$/,''),caption:file.name,categories:['hero'],orientation:'landscape'});
+          }
         });
         await persistAndReload(state,`${files.length} hero image${files.length===1?'':'s'} saved to GitHub.`);
         return;
@@ -88,7 +96,7 @@
         const index=String(input.dataset.propertyUpload);
         const list=Array.isArray(state.propertyPhotos[index])?state.propertyPhotos[index]:[];
         await uploadSequential(files,'property-photos/admin',(path,file)=>{
-          list.push({image:path,caption:file.name,categories:[],orientation:'landscape'});
+          if(!list.some(photo=>String(photo?.image||'')===path))list.push({image:path,caption:file.name,categories:[],orientation:'landscape'});
         });
         state.propertyPhotos[index]=list;
         await persistAndReload(state,`${files.length} property image${files.length===1?'':'s'} saved to GitHub.`);
