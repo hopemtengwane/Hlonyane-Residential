@@ -2,7 +2,9 @@
 (() => {
   window.HLONYANE_TENANT_DATA_API_URL='https://script.google.com/macros/s/AKfycbxmWcEaOSSUJ0Pe9S6fxI7_MCghmcoVXwKJpeVggGapI_qF_XoOoXyQ-ATMdQyxsKF5-g/exec';
   const key='hlonyaneSiteStateV41';
-  const configUrl='https://raw.githubusercontent.com/hopemtengwane/Hlonyane-Residential/main/site-config.json';
+  // Read the committed CMS configuration through GitHub Pages itself. This avoids
+  // cross-origin/raw.githubusercontent behaviour in private/incognito sessions.
+  const configUrl='site-config.json';
   const base=()=>({heroPhotos:null,heroText:null,propertyPhotos:{},properties:null,overnight:{},parallax:{},deletedComments:[]});
   const overnightBachelor={name:'Overnight Bachelor Rooms',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:null,baths:null,area:null,rent:750,furnished:null,type:'4 bachelor rooms · priced per room',photoGroup:'roode',heroNumber:45,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
   const commune={name:'4 Bedroom Commune',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:4,baths:2,area:null,rent:600,furnished:null,type:'4 communal rooms · priced per room',photoGroup:'roode-2bed-furnished',heroNumber:11,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
@@ -72,10 +74,10 @@
     }catch(e){console.warn('Unable to apply central site configuration',e)}
   };
 
-  fetch(configUrl+'?v='+Date.now(),{cache:'no-store'})
+  fetch(configUrl+'?v='+Date.now(),{cache:'no-store',credentials:'same-origin'})
     .then(response=>response.ok?response.json():null)
     .then(applyCentral)
-    .catch(()=>{});
+    .catch(error=>console.warn('Unable to load central site configuration',error));
 
   window.SITE_STATE=state;
   window.HLONYANE_CONTACTS={phone:'072 455 9413',email:'msindisi.mtengwane@gmail.com',portalPhone:'072 455 9413',portalEmail:'msindisi.mtengwane@gmail.com',...(state.contacts||{})};
