@@ -18,3 +18,24 @@ function render(){const rows=matchingProperties($('#search').value,+$('#beds').v
 $('#propertyPrev').addEventListener('click',()=>pageProperties(-1));$('#propertyNext').addEventListener('click',()=>pageProperties(1));function pageProperties(direction){const grid=$('#propertyGrid'),card=grid.querySelector('.property-card');if(!card)return;const gap=parseFloat(getComputedStyle(grid).gap)||20;grid.scrollBy({left:direction*(card.getBoundingClientRect().width+gap),behavior:'smooth'});}
 ['search','beds','rent'].forEach(id=>$('#'+id).addEventListener('input',render));document.addEventListener('click',event=>{const link=event.target.closest('[data-enquiry]');if(!link)return;setEnquiry(link.dataset.enquiry);const message=document.querySelector('#enquiryForm textarea[name="message"]');if(message)message.value='I would like to enquire about '+link.dataset.enquiry+'.'});render();
 document.querySelector('.menu-toggle').addEventListener('click',e=>{const nav=document.querySelector('.site-nav'),open=nav.classList.toggle('open');e.currentTarget.setAttribute('aria-expanded',open)});document.querySelectorAll('.site-nav a').forEach(a=>a.addEventListener('click',()=>document.querySelector('.site-nav').classList.remove('open')));$('#newRequest')?.addEventListener('click',()=>$('#repairDialog')?.showModal());$('#repairForm')?.addEventListener('submit',e=>{if(e.submitter.value==='cancel')return;const data=new FormData(e.currentTarget),count=$('#requestCount'),list=$('#requestList');if(!count||!list)return;const n=+count.textContent+1;count.textContent=n;list.insertAdjacentHTML('afterbegin',`<div class="request-item"><strong>DEMO-${String(n).padStart(3,'0')} · ${data.get('category')}</strong><br>${data.get('description')}<br><small>Submitted · Demo session</small></div>`)});$('#enquiryForm')?.addEventListener('submit',e=>{e.preventDefault();const status=$('#formStatus');if(status&&!window.hlonyaneNotify)status.textContent='Please wait while the enquiry service loads.'});function setEnquiry(name){const status=$('#formStatus');if(status)status.textContent='Selected property: '+name};$('#year').textContent=new Date().getFullYear();
+
+// Enquiry dates must always be today or later.
+(function initEnquiryDateLimits(){
+  const today=new Date();
+  const localToday=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  const preferred=document.querySelector('#enquiryForm input[name="preferredDate"]');
+  const checkIn=document.querySelector('#checkIn');
+  const checkOut=document.querySelector('#checkOut');
+  if(preferred)preferred.min=localToday;
+  if(checkIn)checkIn.min=localToday;
+  if(checkOut)checkOut.min=localToday;
+  if(checkIn&&checkOut){
+    const syncCheckout=()=>{
+      const min=checkIn.value&&checkIn.value>localToday?checkIn.value:localToday;
+      checkOut.min=min;
+      if(checkOut.value&&checkOut.value<min)checkOut.value='';
+    };
+    checkIn.addEventListener('change',syncCheckout);
+    syncCheckout();
+  }
+})();
