@@ -31,12 +31,17 @@
     script.onerror = reject;
     document.body.append(script);
   });
+  const setLoader = message => {
+    const text=document.querySelector('[data-admin-loading-text]');
+    if(text)text.textContent=message;
+  };
 
   async function guardDashboard() {
     if (!client) {
       location.replace('admin.html?error=supabase');
       return;
     }
+    setLoader('Checking your Admin session…');
     const { data: { session } } = await client.auth.getSession();
     const user = session?.user;
     if (!user || !isAllowed(user)) {
@@ -47,19 +52,21 @@
     window.HLONYANE_ADMIN_USER = user;
     document.documentElement.classList.add('admin-authorised');
     try {
+      setLoader('Loading website settings…');
       await loadScript('pricing-policy.js?v=20260929-1');
-      await loadScript('admin-site-config.js?v=20260929-3');
+      await loadScript('admin-site-config.js?v=20260929-4');
       await window.HLONYANE_ADMIN_SITE_CONFIG?.bootstrap();
+      setLoader('Preparing Admin workspace…');
       await loadScript('admin-state-recovery.js?v=20260929-2');
       await loadScript('admin-property-migration.js?v=20260928-1');
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
       await loadScript('admin-central-save.js?v=20260929-1');
-      await window.HLONYANE_ADMIN_SITE_CONFIG?.save?.({quiet:true});
       document.documentElement.classList.add('admin-ready');
     } catch (error) {
       console.error('Unable to load Hlonyane admin workspace:', error);
-      document.documentElement.classList.add('admin-ready');
+      setLoader('Unable to fully load Admin. Refresh to try again.');
+      setTimeout(()=>document.documentElement.classList.add('admin-ready'),900);
     }
   }
 
