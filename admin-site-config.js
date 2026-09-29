@@ -8,10 +8,19 @@
   const toast=message=>{const el=document.querySelector('#cmsToast');if(!el)return;el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2400)};
   const configured=()=>/^https:\/\/script\.google\.com\/macros\/s\//i.test(API_URL);
   const isDataUrl=value=>typeof value==='string'&&/^data:/i.test(value);
+  const cleanPhoto=photo=>{
+    if(typeof photo==='string')return isDataUrl(photo)?null:photo;
+    if(!photo||typeof photo!=='object'||!photo.image||isDataUrl(photo.image))return null;
+    return {...photo};
+  };
+  const cleanPhotoList=list=>(Array.isArray(list)?list:[]).map(cleanPhoto).filter(Boolean);
+  const cleanPropertyPhotos=value=>Object.fromEntries(Object.entries(value||{}).map(([key,list])=>[key,cleanPhotoList(list)]).filter(([,list])=>list.length));
   const cleanParallax=parallax=>Object.fromEntries(Object.entries(parallax||{}).filter(([,v])=>v&&!isDataUrl(v)));
   const sanitise=state=>{
     const safe={
+      heroPhotos:cleanPhotoList(state?.heroPhotos),
       heroText:state?.heroText||null,
+      propertyPhotos:cleanPropertyPhotos(state?.propertyPhotos),
       properties:Array.isArray(state?.properties)?state.properties:null,
       overnight:state?.overnight?{...state.overnight,image:isDataUrl(state.overnight.image)?undefined:state.overnight.image}:null,
       parallax:cleanParallax(state?.parallax),
@@ -19,6 +28,8 @@
       contacts:state?.contacts||null
     };
     if (safe.overnight && safe.overnight.image===undefined) delete safe.overnight.image;
+    if (!safe.heroPhotos.length) delete safe.heroPhotos;
+    if (!Object.keys(safe.propertyPhotos).length) delete safe.propertyPhotos;
     return safe;
   };
   async function token(){if(!client)throw new Error('Supabase admin session unavailable');const {data:{session}}=await client.auth.getSession();if(!session?.access_token)throw new Error('Admin session expired. Please sign in again.');return session.access_token}
@@ -49,8 +60,9 @@
     const remote=await publicConfig();
     if(remote&&Object.keys(remote).length){
       const merged={...local,...remote};
-      if(local.propertyPhotos&&!remote.propertyPhotos)merged.propertyPhotos=local.propertyPhotos;
-      if(local.heroPhotos&&!remote.heroPhotos)merged.heroPhotos=local.heroPhotos;
+      merged.propertyPhotos={...(local.propertyPhotos||{}),...(remote.propertyPhotos||{})};
+      if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
+      else if(local.heroPhotos)merged.heroPhotos=local.heroPhotos;
       merged.parallax={...(local.parallax||{}),...(remote.parallax||{})};
       const priced=window.HLONYANE_APPLY_PRICING_POLICY?window.HLONYANE_APPLY_PRICING_POLICY(merged):merged;
       localStorage.setItem(KEY,JSON.stringify(priced));
