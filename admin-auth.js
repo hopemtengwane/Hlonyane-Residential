@@ -61,6 +61,8 @@
       await loadScript('admin-property-migration.js?v=20260928-1');
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
+      setLoader('Loading tenant register…');
+      await loadScript('tenant-sheet-sync.js?v=20260929-3');
       document.documentElement.classList.add('admin-ready');
     } catch (error) {
       console.error('Unable to load Hlonyane admin workspace:', error);
