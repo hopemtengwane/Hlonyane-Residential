@@ -53,7 +53,8 @@ function doGet(e) {
     let result;
     if (action === 'tenant.requestOtp') result = requestTenantOtp_(p.email || '');
     else if (action === 'tenant.verifyOtp') result = verifyTenantOtp_(p.email || '', p.code || '');
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.2'};
+    else if (action === 'site.getConfig') result = getSiteConfig_();
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.3'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -70,6 +71,7 @@ function doPost(e) {
       if (action === 'admin.syncTenants') return json_(syncTenants_(body.tenants || [], admin.email));
       if (action === 'admin.listTenants') return json_({ok:true, tenants:listTenants_()});
       if (action === 'admin.deleteTenant') return json_(deleteTenant_(body.email || body.tenantId, admin.email));
+      if (action === 'admin.saveSiteConfig') return json_(saveSiteConfig_(body.config || {}, admin.email));
       throw new Error('Unsupported admin action');
     }
     throw new Error('Unsupported action');
