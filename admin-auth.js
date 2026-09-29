@@ -55,6 +55,7 @@
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
       await loadScript('admin-central-save.js?v=20260929-1');
+      await window.HLONYANE_ADMIN_SITE_CONFIG?.save?.({quiet:true});
       document.documentElement.classList.add('admin-ready');
     } catch (error) {
       console.error('Unable to load Hlonyane admin workspace:', error);
