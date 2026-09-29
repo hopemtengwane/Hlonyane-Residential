@@ -6,6 +6,16 @@ const CONFIG = {
   otpMinutes: 10
 };
 
+function authorizeTenantMail() {
+  MailApp.sendEmail({
+    to: Session.getActiveUser().getEmail() || 'omnidatamanager@gmail.com',
+    subject: 'Hlonyane Tenant Portal mail authorization test',
+    htmlBody: '<p>The Hlonyane Tenant Portal email service has been authorized successfully.</p>',
+    name: 'Hlonyane Residential'
+  });
+  return 'Mail authorization complete';
+}
+
 function doGet(e) {
   try {
     const p = (e && e.parameter) || {};
