@@ -4,6 +4,9 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+const APPS_SCRIPT_URL = Deno.env.get('HLONYANE_APPS_SCRIPT_URL') ||
+  'https://script.google.com/macros/s/AKfycbyTFbn9riBXqN7zxocqEmYUDhE8IlQJvU3QGBIRvbXgobN6IsXo_PcU76IkP32eEDJGlw/exec';
+
 const esc = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
   '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
 }[char]));
@@ -58,12 +61,50 @@ const sendResend = async ({ to, subject, html, replyTo, attachments }: {
   return result;
 };
 
+const tenantPasswordLogin = async (email: string, password: string) => {
+  let response: Response;
+  try {
+    response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'tenant.passwordLogin', email, password }),
+      redirect: 'follow',
+    });
+  } catch (_) {
+    throw new Error('Unable to contact the tenant database.');
+  }
+
+  const text = await response.text();
+  let result: any = null;
+  try { result = JSON.parse(text); } catch (_) {}
+  if (!response.ok) throw new Error(result?.error || `Tenant database returned HTTP ${response.status}.`);
+  if (!result || typeof result !== 'object') throw new Error('Tenant database returned an invalid response.');
+  return result;
+};
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
   if (request.method !== 'POST') return json({ error: 'POST required' }, 405);
 
   try {
     const contentType = request.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      const body = await request.json().catch(() => ({}));
+      const site = String(body?.site || 'hlonyane').trim().toLowerCase();
+      const action = String(body?.action || '').trim();
+      if (site !== 'hlonyane') return json({ ok:false, error:'Unsupported site.' }, 400);
+      if (action !== 'tenant.passwordLogin') return json({ ok:false, error:'Unsupported action.' }, 400);
+
+      const email = String(body?.email || '').trim().toLowerCase();
+      const password = String(body?.password || '');
+      if (!/^\S+@\S+\.\S+$/.test(email)) return json({ ok:false, error:'Enter a valid email address.' }, 400);
+      if (!password) return json({ ok:false, error:'Enter your tenant portal password.' }, 400);
+
+      const result = await tenantPasswordLogin(email, password);
+      return json(result, result?.ok === false ? 400 : 200);
+    }
+
     if (!contentType.includes('multipart/form-data')) {
       return json({ error: 'Expected multipart form data.' }, 400);
     }
@@ -198,6 +239,6 @@ Deno.serve(async (request) => {
 
     return json({ ok: true, reference });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : 'Unable to send email.' }, 500);
+    return json({ error: error instanceof Error ? error.message : 'Unable to complete request.' }, 500);
   }
 });
