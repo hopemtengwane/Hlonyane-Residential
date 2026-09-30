@@ -56,6 +56,7 @@
       property,
       bedroomType:String(t?.['Bedroom Type']||'').trim(),
       furnishing:String(t?.Furnishing||'Unfurnished').trim()||'Unfurnished',
+      password:String(t?.Password||'').trim(),
       rent:String(t?.['Monthly Rent']||'').trim(),
       deposit:String(t?.Deposit||'').trim(),
       leaseStart:String(t?.['Lease Start']||'').trim(),
@@ -131,7 +132,17 @@
     return [...document.querySelectorAll('#tenantRegister .tenant-row')].map(row=>{
       const value=field=>row.querySelector(`[data-tenant="${field}"]`)?.value?.trim()||'';
       const noticeText=row.dataset.tenantNotice||'';
-      return {name:value('name'),email:value('email').toLowerCase(),mobile:value('mobile'),property:value('property'),furnishing:value('furnishing')||'Unfurnished',awayFrom:value('awayFrom'),awayTo:value('awayTo'),notice:noticeText==='none'?null:{status:noticeText}};
+      return {
+        name:value('name'),
+        email:value('email').toLowerCase(),
+        mobile:value('mobile'),
+        property:value('property'),
+        furnishing:value('furnishing')||'Unfurnished',
+        password:value('password'),
+        awayFrom:value('awayFrom'),
+        awayTo:value('awayTo'),
+        notice:noticeText==='none'?null:{status:noticeText}
+      };
     }).filter(t=>t.email&&!isDemoTenant(t));
   }
 
