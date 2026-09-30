@@ -3,6 +3,7 @@
   const SUPABASE_KEY='sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
   const TENANT_PROXY_URL=SUPABASE_URL+'/functions/v1/hlonyane-admin-media';
   const TENANT_KEY='hlonyaneTenantRegisterV1';
+  const REFRESH_FLAG='hlonyaneTenantDatabaseRefreshPending';
   const client=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
   let syncing=false;
 
@@ -99,13 +100,16 @@
   function renderFromDatabase(tenants){
     const previous=localStorage.getItem(TENANT_KEY)||'[]';
     const next=JSON.stringify(tenants);
+    const alreadyRefreshed=sessionStorage.getItem(REFRESH_FLAG)==='1';
     localStorage.setItem(TENANT_KEY,next);
-    if(previous!==next){
-      sessionStorage.setItem('hlonyaneTenantDatabaseRefreshPending','1');
+
+    if(previous!==next&&!alreadyRefreshed){
+      sessionStorage.setItem(REFRESH_FLAG,'1');
       location.reload();
       return false;
     }
-    sessionStorage.removeItem('hlonyaneTenantDatabaseRefreshPending');
+
+    sessionStorage.removeItem(REFRESH_FLAG);
     return true;
   }
 
