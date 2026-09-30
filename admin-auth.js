@@ -30,7 +30,7 @@
       await loadScript('admin-app.js?v=20260929-2');
       await loadScript('admin-tenant-cleanup.js?v=20260929-1');
       setLoader('Loading tenant register…');
-      await loadScript('tenant-sheet-sync.js?v=20260929-4');
+      await loadScript('tenant-sheet-sync.js?v=20260930-1');
       await window.HLONYANE_TENANT_SHEET_READY;
       window.HLONYANE_TENANT_DEMO_CLEANUP?.run();
       document.documentElement.classList.add('admin-ready');
