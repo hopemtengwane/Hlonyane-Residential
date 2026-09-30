@@ -18,7 +18,7 @@ const REPO_OWNER = 'hopemtengwane';
 const REPO_NAME = 'Hlonyane-Residential';
 const REPO_BRANCH = 'main';
 const SITE_CONFIG_PATH = 'site-config.json';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz-iFuVnlZQaGJn4GrOianYgKckhZ_LOayMJNZgRml8k1VbI_sdBLBJazycGD1iL58pkw/exec';
+const APPS_SCRIPT_URL = Deno.env.get('HLONYANE_APPS_SCRIPT_URL') || 'https://script.google.com/macros/s/AKfycbxHDzhEZsxYYFff3cGwUWu5iIWpQJUNsaXc4hDDryWILOL-uuwhL-pBbeFKxv2yDJRjCA/exec';
 const ALLOWED_FOLDERS = new Set([
   'property-photos/admin',
   'hero-photos/admin',
@@ -70,7 +70,7 @@ const requireAdmin = async (request: Request) => {
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: { apikey: anonKey, Authorization: auth },
   });
-  if (!response.ok) throw new Error('Invalid or expired admin session.');
+  if (!response.ok) throw new Error(`Invalid or expired admin session (${response.status}).`);
 
   const user = await response.json();
   const email = String(user?.email || '').trim().toLowerCase();
@@ -118,20 +118,60 @@ const saveSiteConfig = async (config: unknown, adminEmail: string, githubToken: 
   });
 };
 
+const responsePreview = (text: string) => text.replace(/\s+/g, ' ').trim().slice(0, 220);
+
 const callTenantBackend = async (action: string, payload: Record<string, unknown>, accessToken: string) => {
-  const response = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, accessToken, ...payload }),
-    redirect: 'follow',
-  });
+  let response: Response;
+  try {
+    response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, accessToken, ...payload }),
+      redirect: 'follow',
+    });
+  } catch (error) {
+    throw new Error(`Apps Script network request failed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
   const text = await response.text();
   let result: any = null;
   try { result = JSON.parse(text); } catch (_) {}
-  if (!response.ok) throw new Error(result?.error || `Tenant backend returned HTTP ${response.status}.`);
-  if (!result || typeof result !== 'object') throw new Error('Tenant backend returned an invalid response.');
-  if (result.ok === false) throw new Error(result.error || 'Tenant backend rejected the request.');
+  if (!response.ok) {
+    throw new Error(result?.error || `Apps Script returned HTTP ${response.status} at ${response.url || APPS_SCRIPT_URL}. Response: ${responsePreview(text) || '(empty)'}`);
+  }
+  if (!result || typeof result !== 'object') {
+    throw new Error(`Apps Script returned non-JSON content at ${response.url || APPS_SCRIPT_URL}. Response: ${responsePreview(text) || '(empty)'}`);
+  }
+  if (result.ok === false) throw new Error(result.error || 'Apps Script rejected the tenant request.');
   return result;
+};
+
+const tenantHealth = async () => {
+  let response: Response;
+  try {
+    response = await fetch(`${APPS_SCRIPT_URL}?_=${Date.now()}`, { redirect: 'follow' });
+  } catch (error) {
+    return {
+      ok: false,
+      stage: 'edge-to-apps-script',
+      error: error instanceof Error ? error.message : String(error),
+      appsScriptUrl: APPS_SCRIPT_URL,
+    };
+  }
+  const text = await response.text();
+  let parsed: any = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  return {
+    ok: response.ok && !!parsed?.ok,
+    stage: 'edge-to-apps-script',
+    httpStatus: response.status,
+    finalUrl: response.url,
+    appsScriptUrl: APPS_SCRIPT_URL,
+    responseType: parsed ? 'json' : 'non-json',
+    service: parsed?.service || null,
+    version: parsed?.version || null,
+    responsePreview: parsed ? null : responsePreview(text),
+  };
 };
 
 Deno.serve(async (request) => {
@@ -150,6 +190,9 @@ Deno.serve(async (request) => {
 
       if (body?.action === 'saveSiteConfig') {
         return await saveSiteConfig(body?.config || {}, admin.email, githubToken);
+      }
+      if (body?.action === 'tenantHealth') {
+        return json(await tenantHealth());
       }
       if (body?.action === 'listTenants') {
         const result = await callTenantBackend('admin.listTenants', {}, admin.accessToken);
