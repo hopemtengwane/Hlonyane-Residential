@@ -16,17 +16,9 @@ function resendApiKey_() {
 
 function sendResend_(to, subject, html) {
   const response = UrlFetchApp.fetch('https://api.resend.com/emails', {
-    method: 'post',
-    muteHttpExceptions: true,
-    contentType: 'application/json',
+    method: 'post', muteHttpExceptions: true, contentType: 'application/json',
     headers: {Authorization: 'Bearer ' + resendApiKey_()},
-    payload: JSON.stringify({
-      from: CONFIG.fromEmail,
-      to: [to],
-      subject: subject,
-      html: html,
-      reply_to: CONFIG.replyTo
-    })
+    payload: JSON.stringify({from: CONFIG.fromEmail,to: [to],subject: subject,html: html,reply_to: CONFIG.replyTo})
   });
   const status = response.getResponseCode();
   const body = response.getContentText() || '{}';
@@ -38,11 +30,7 @@ function sendResend_(to, subject, html) {
 
 function testResendMail() {
   const to = Session.getActiveUser().getEmail() || 'omnidatamanager@gmail.com';
-  sendResend_(
-    to,
-    'Hlonyane Residential email test',
-    '<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Resend is connected successfully.</p><p>This email was sent from <strong>communication@hlonyaneresidential.co.za</strong>.</p></div>'
-  );
+  sendResend_(to,'Hlonyane Residential email test','<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Resend is connected successfully.</p><p>This email was sent from <strong>communication@hlonyaneresidential.co.za</strong>.</p></div>');
   return 'Resend test sent to ' + to;
 }
 
@@ -53,12 +41,10 @@ function doGet(e) {
     let result;
     if (action === 'tenant.requestOtp') result = requestTenantOtp_(p.email || '');
     else if (action === 'tenant.verifyOtp') result = verifyTenantOtp_(p.email || '', p.code || '');
+    else if (action === 'tenant.listMessages') result = listTenantMessages_(p.email || '', p.tenantId || '');
     else if (action === 'site.getConfig') result = getSiteConfig_();
-    else if (action === 'admin.listTenants') {
-      requireAdmin_(p.accessToken || '');
-      result = {ok:true, tenants:listTenants_()};
-    }
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.6'};
+    else if (action === 'admin.listTenants') { requireAdmin_(p.accessToken || ''); result = {ok:true, tenants:listTenants_()}; }
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.7'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -70,13 +56,9 @@ function doPost(e) {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     const action = String(body.action || '');
     if (!action) throw new Error('Missing action');
-
-    if (action === 'tenant.passwordLogin') {
-      return json_(passwordTenantLogin_(body.email || '', body.password || ''));
-    }
-    if (action === 'tenant.sendMessage') {
-      return json_(submitTenantMessage_(body));
-    }
+    if (action === 'tenant.passwordLogin') return json_(passwordTenantLogin_(body.email || '', body.password || ''));
+    if (action === 'tenant.sendMessage') return json_(submitTenantMessage_(body));
+    if (action === 'tenant.markMessageRead') return json_(markTenantMessageRead_(body.messageId || '', body.email || '', body.tenantId || ''));
 
     if (action.startsWith('admin.')) {
       const admin = requireAdmin_(body.accessToken);
@@ -86,6 +68,7 @@ function doPost(e) {
       if (action === 'admin.saveSiteConfig') return json_(saveSiteConfig_(body.config || {}, admin.email));
       if (action === 'admin.listPortalMessages') return json_({ok:true, messages:listPortalMessages_()});
       if (action === 'admin.markPortalMessageRead') return json_(markPortalMessageRead_(body.messageId || '', admin.email));
+      if (action === 'admin.sendPortalMessage') return json_(adminSendPortalMessage_(body, admin.email));
       throw new Error('Unsupported admin action');
     }
     throw new Error('Unsupported action');
@@ -96,10 +79,7 @@ function doPost(e) {
 
 function requireAdmin_(accessToken) {
   if (!accessToken) throw new Error('Admin session required');
-  const res = UrlFetchApp.fetch(CONFIG.supabaseUrl + '/auth/v1/user', {
-    method:'get', muteHttpExceptions:true,
-    headers:{apikey:CONFIG.supabasePublishableKey, Authorization:'Bearer ' + accessToken}
-  });
+  const res = UrlFetchApp.fetch(CONFIG.supabaseUrl + '/auth/v1/user', {method:'get', muteHttpExceptions:true,headers:{apikey:CONFIG.supabasePublishableKey, Authorization:'Bearer ' + accessToken}});
   if (res.getResponseCode() !== 200) throw new Error('Invalid or expired admin session');
   const user = JSON.parse(res.getContentText() || '{}');
   const email = String(user.email || '').trim().toLowerCase();
@@ -121,9 +101,7 @@ function headers_(sh) {
 function ensureTenantPasswordColumn_() {
   const sh = sheet_('Tenants');
   const headers = headers_(sh);
-  if (!headers.includes('Password')) {
-    sh.getRange(1, headers.length + 1).setValue('Password');
-  }
+  if (!headers.includes('Password')) sh.getRange(1, headers.length + 1).setValue('Password');
   return sh;
 }
 
@@ -132,11 +110,7 @@ function listTenants_() {
   const headers = headers_(sh);
   if (sh.getLastRow() < 2) return [];
   const rows = sh.getRange(2,1,sh.getLastRow()-1,headers.length).getDisplayValues();
-  return rows.filter(r => r.some(Boolean)).map(r => {
-    const obj = {};
-    headers.forEach((h,i)=>obj[h]=r[i]);
-    return obj;
-  });
+  return rows.filter(r => r.some(Boolean)).map(r => { const obj = {}; headers.forEach((h,i)=>obj[h]=r[i]); return obj; });
 }
 
 function findTenantByEmail_(email) {
@@ -149,25 +123,7 @@ function tenantPayload_(tenant, email) {
   const clean = String(email || tenant.Email || '').trim().toLowerCase();
   const name = String(tenant['Full Name'] || tenant.Name || '').trim();
   const property = [String(tenant.Property || '').trim(), String(tenant.Unit || '').trim()].filter(Boolean).join(' · ');
-  return {
-    tenantId:String(tenant['Tenant ID'] || ''),
-    name:name,
-    email:clean,
-    mobile:String(tenant.Mobile || ''),
-    emergency:String(tenant['Emergency Contact'] || ''),
-    property:property,
-    bedroomType:String(tenant['Bedroom Type'] || ''),
-    furnishing:String(tenant.Furnishing || 'Unfurnished'),
-    rent:String(tenant['Monthly Rent'] || ''),
-    deposit:String(tenant.Deposit || ''),
-    leaseStart:String(tenant['Lease Start'] || ''),
-    leaseEnd:String(tenant['Lease End'] || ''),
-    awayFrom:String(tenant['Away From'] || ''),
-    awayTo:String(tenant['Away To'] || ''),
-    noticeStatus:String(tenant['Notice Status'] || ''),
-    noticeStart:String(tenant['Notice Start'] || ''),
-    photo:String(tenant['Profile Photo'] || '')
-  };
+  return {tenantId:String(tenant['Tenant ID'] || ''),name:name,email:clean,mobile:String(tenant.Mobile || ''),emergency:String(tenant['Emergency Contact'] || ''),property:property,bedroomType:String(tenant['Bedroom Type'] || ''),furnishing:String(tenant.Furnishing || 'Unfurnished'),rent:String(tenant['Monthly Rent'] || ''),deposit:String(tenant.Deposit || ''),leaseStart:String(tenant['Lease Start'] || ''),leaseEnd:String(tenant['Lease End'] || ''),awayFrom:String(tenant['Away From'] || ''),awayTo:String(tenant['Away To'] || ''),noticeStatus:String(tenant['Notice Status'] || ''),noticeStart:String(tenant['Notice Start'] || ''),photo:String(tenant['Profile Photo'] || '')};
 }
 
 function passwordTenantLogin_(email, password) {
@@ -175,16 +131,11 @@ function passwordTenantLogin_(email, password) {
   const entered = String(password || '');
   if (!/^\S+@\S+\.\S+$/.test(clean)) return {ok:false, error:'Enter a valid email address.'};
   if (!entered) return {ok:false, error:'Enter your tenant portal password.'};
-
   const tenant = findTenantByEmail_(clean);
-  if (!tenant || String(tenant.Status || 'Active').toLowerCase() !== 'active') {
-    return {ok:false, error:'This email is not enrolled as an active Hlonyane tenant.'};
-  }
-
+  if (!tenant || String(tenant.Status || 'Active').toLowerCase() !== 'active') return {ok:false, error:'This email is not enrolled as an active Hlonyane tenant.'};
   const stored = String(tenant.Password || '');
   if (!stored) return {ok:false, error:'A portal password has not been set for this tenant yet. Please contact the property manager.'};
   if (entered !== stored) return {ok:false, error:'Incorrect password for this tenant account.'};
-
   return {ok:true, tenant:tenantPayload_(tenant, clean)};
 }
 
@@ -192,16 +143,10 @@ function requestTenantOtp_(email) {
   const clean = String(email || '').trim().toLowerCase();
   if (!/^\S+@\S+\.\S+$/.test(clean)) return {ok:false, error:'Enter a valid email address.'};
   const tenant = findTenantByEmail_(clean);
-  if (!tenant || String(tenant.Status || 'Active').toLowerCase() !== 'active') {
-    return {ok:false, error:'This email is not enrolled as an active Hlonyane tenant.'};
-  }
+  if (!tenant || String(tenant.Status || 'Active').toLowerCase() !== 'active') return {ok:false, error:'This email is not enrolled as an active Hlonyane tenant.'};
   const code = String(Math.floor(100000 + Math.random() * 900000));
   CacheService.getScriptCache().put('tenant-otp:' + clean, code, CONFIG.otpMinutes * 60);
-  sendResend_(
-    clean,
-    'Your Hlonyane Residential sign-in code',
-    '<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Your tenant portal sign-in code is:</p><p style="font-size:30px;font-weight:700;letter-spacing:6px">' + code + '</p><p>This code expires in ' + CONFIG.otpMinutes + ' minutes.</p><p>If you did not request this code, you can ignore this email.</p><p style="margin-top:28px;color:#65727a;font-size:12px">Hlonyane Residential · communication@hlonyaneresidential.co.za</p></div>'
-  );
+  sendResend_(clean,'Your Hlonyane Residential sign-in code','<div style="font-family:Arial,sans-serif;color:#102b3c"><h2>Hlonyane Residential</h2><p>Your tenant portal sign-in code is:</p><p style="font-size:30px;font-weight:700;letter-spacing:6px">' + code + '</p><p>This code expires in ' + CONFIG.otpMinutes + ' minutes.</p><p>If you did not request this code, you can ignore this email.</p><p style="margin-top:28px;color:#65727a;font-size:12px">Hlonyane Residential · communication@hlonyaneresidential.co.za</p></div>');
   return {ok:true, sent:true, expiresMinutes:CONFIG.otpMinutes};
 }
 
@@ -248,35 +193,8 @@ function syncTenants_(tenants, adminEmail) {
     if (!email) return null;
     const old = existingByEmail[email] || {};
     const p = propertyParts_(t.property);
-    return {
-      'Tenant ID': old['Tenant ID'] || tenantId_(email),
-      'Status': String(t.status || old.Status || 'Active'),
-      'Full Name': String(t.name || '').trim(),
-      'Name': String(t.name || '').trim(),
-      'Email': email,
-      'Mobile': String(t.mobile || '').trim(),
-      'Emergency Contact': String(t.emergency || old['Emergency Contact'] || '').trim(),
-      'Property': p.address,
-      'Unit': p.unit,
-      'Bedroom Type': p.bedroomType,
-      'Furnishing': String(t.furnishing || 'Unfurnished'),
-      'Password': String(t.password || old.Password || '').trim(),
-      'Monthly Rent': String(t.rent || old['Monthly Rent'] || ''),
-      'Deposit': String(t.deposit || old.Deposit || ''),
-      'Lease Start': String(t.leaseStart || old['Lease Start'] || ''),
-      'Lease End': String(t.leaseEnd || old['Lease End'] || ''),
-      'Home/Away Status': String(t.awayFrom && t.awayTo ? 'Away' : 'Home'),
-      'Away From': String(t.awayFrom || ''),
-      'Away To': String(t.awayTo || ''),
-      'Notice Status': String((t.notice && t.notice.status) || old['Notice Status'] || ''),
-      'Notice Start': String((t.notice && t.notice.startsOn) || old['Notice Start'] || ''),
-      'Profile Photo': String(t.photo || old['Profile Photo'] || ''),
-      'Created At': old['Created At'] || Utilities.formatDate(now, 'Africa/Johannesburg', "yyyy-MM-dd'T'HH:mm:ssXXX"),
-      'Updated At': Utilities.formatDate(now, 'Africa/Johannesburg', "yyyy-MM-dd'T'HH:mm:ssXXX"),
-      'Updated By': adminEmail
-    };
+    return {'Tenant ID': old['Tenant ID'] || tenantId_(email),'Status': String(t.status || old.Status || 'Active'),'Full Name': String(t.name || '').trim(),'Name': String(t.name || '').trim(),'Email': email,'Mobile': String(t.mobile || '').trim(),'Emergency Contact': String(t.emergency || old['Emergency Contact'] || '').trim(),'Property': p.address,'Unit': p.unit,'Bedroom Type': p.bedroomType,'Furnishing': String(t.furnishing || 'Unfurnished'),'Password': String(t.password || old.Password || '').trim(),'Monthly Rent': String(t.rent || old['Monthly Rent'] || ''),'Deposit': String(t.deposit || old.Deposit || ''),'Lease Start': String(t.leaseStart || old['Lease Start'] || ''),'Lease End': String(t.leaseEnd || old['Lease End'] || ''),'Home/Away Status': String(t.awayFrom && t.awayTo ? 'Away' : 'Home'),'Away From': String(t.awayFrom || ''),'Away To': String(t.awayTo || ''),'Notice Status': String((t.notice && t.notice.status) || old['Notice Status'] || ''),'Notice Start': String((t.notice && t.notice.startsOn) || old['Notice Start'] || ''),'Profile Photo': String(t.photo || old['Profile Photo'] || ''),'Created At': old['Created At'] || Utilities.formatDate(now, 'Africa/Johannesburg', "yyyy-MM-dd'T'HH:mm:ssXXX"),'Updated At': Utilities.formatDate(now, 'Africa/Johannesburg', "yyyy-MM-dd'T'HH:mm:ssXXX"),'Updated By': adminEmail};
   }).filter(Boolean);
-
   if (sh.getLastRow() > 1) sh.getRange(2,1,sh.getLastRow()-1,Math.max(headers.length,1)).clearContent();
   if (clean.length) {
     const values = clean.map(obj => headers.map(h => obj[h] == null ? '' : obj[h]));
@@ -299,18 +217,12 @@ function deleteTenant_(identity, adminEmail) {
   for (let i=rows.length-1;i>=0;i--) {
     const email = emailCol >= 0 ? String(rows[i][emailCol]).toLowerCase() : '';
     const id = idCol >= 0 ? String(rows[i][idCol]).toLowerCase() : '';
-    if (email === key || id === key) {
-      sh.deleteRow(i+2);
-      return {ok:true, deleted:true, by:adminEmail};
-    }
+    if (email === key || id === key) { sh.deleteRow(i+2); return {ok:true, deleted:true, by:adminEmail}; }
   }
   return {ok:true, deleted:false};
 }
 
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
-}
-
+function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function jsonpOrJson_(obj, callback) {
   const cb = String(callback || '').replace(/[^a-zA-Z0-9_$\\.]/g,'');
   if (!cb) return json_(obj);
