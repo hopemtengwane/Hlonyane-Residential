@@ -28,6 +28,7 @@
       await loadScript('admin-property-migration.js?v=20260928-1');
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
+      await loadScript('admin-tenant-form-stability.js?v=20260930-1');
       await loadScript('admin-tenant-cleanup.js?v=20260929-1');
       setLoader('Loading tenant register…');
       await loadScript('tenant-sheet-sync.js?v=20260930-2');
