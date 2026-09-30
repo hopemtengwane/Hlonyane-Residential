@@ -203,6 +203,14 @@ Deno.serve(async (request) => {
         const result = await callTenantBackend('admin.syncTenants', { tenants }, admin.accessToken);
         return json(result);
       }
+      if (body?.action === 'listPortalMessages') {
+        const result = await callTenantBackend('admin.listPortalMessages', {}, admin.accessToken);
+        return json(result);
+      }
+      if (body?.action === 'markPortalMessageRead') {
+        const result = await callTenantBackend('admin.markPortalMessageRead', { messageId: String(body?.messageId || '') }, admin.accessToken);
+        return json(result);
+      }
       return json({ error: 'Unsupported action.' }, 400);
     }
 
