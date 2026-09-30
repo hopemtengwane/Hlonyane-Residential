@@ -1,0 +1,18 @@
+(() => {
+  const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbyTFbn9riBXqN7zxocqEmYUDhE8IlQJvU3QGBIRvbXgobN6IsXo_PcU76IkP32eEDJGlw/exec';
+  const SUPABASE_URL='https://aovespfbrgctyxhxssji.supabase.co';
+  const SUPABASE_KEY='sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
+  const client=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY):null;
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let leases=[];
+
+  function styles(){if(document.querySelector('#adminLeaseStatusStyles'))return;const s=document.createElement('style');s.id='adminLeaseStatusStyles';s.textContent=`.lease-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;white-space:nowrap}.lease-badge.not-started{background:#eef1f2;color:#66736d}.lease-badge.draft{background:#fff4d8;color:#8d6412}.lease-badge.tenant-signed{background:#e8f0fb;color:#315d91}.lease-badge.fully-signed{background:#e2f4e9;color:#23733f}.lease-open-btn{display:inline-flex;margin-top:10px;text-decoration:none}`;document.head.append(s)}
+  async function token(){const {data:{session}}=await client.auth.getSession();if(!session?.access_token)throw new Error('Admin session expired.');return session.access_token}
+  function jsonp(params){return new Promise((resolve,reject)=>{const cb='hlonyaneAdminLease_'+Date.now()+'_'+Math.random().toString(36).slice(2);const s=document.createElement('script');const t=setTimeout(()=>{cleanup();reject(new Error('Lease service timed out.'))},10000);function cleanup(){clearTimeout(t);delete window[cb];s.remove()}window[cb]=data=>{cleanup();resolve(data)};s.src=APPS_SCRIPT_URL+'?'+new URLSearchParams({...params,callback:cb,_:Date.now().toString()});s.onerror=()=>{cleanup();reject(new Error('Unable to reach lease service.'))};document.head.append(s)})}
+  const cls=status=>String(status||'Not started').toLowerCase().replace(/\s+/g,'-');
+  function apply(){styles();document.querySelectorAll('#tenantRegister .tenant-row').forEach(row=>{const email=String(row.querySelector('[data-tenant="email"]')?.value||'').trim().toLowerCase();if(!email)return;const lease=leases.find(x=>String(x.tenantEmail||'').toLowerCase()===email);const status=lease?.status||'Not started';let badge=row.querySelector('.lease-badge');if(!badge){badge=document.createElement('span');row.querySelector('.tenant-summary')?.append(badge)}badge.className='lease-badge '+cls(status);badge.textContent='Lease: '+status;let area=row.querySelector('.tenant-lease-admin');if(!area){area=document.createElement('div');area.className='tenant-lease-admin';row.querySelector('.tenant-detail .tenant-fields')?.append(area)}area.innerHTML=`<span class="lease-badge ${cls(status)}">Lease: ${esc(status)}</span>${lease?.tenantId?`<a class="cms-save lease-open-btn" href="admin-lease.html?tenantId=${encodeURIComponent(lease.tenantId)}">${status==='Tenant signed'?'Review & sign lease':'Open lease'}</a>`:''}`})}
+  async function load(){if(!client)return;try{const accessToken=await token();const r=await jsonp({action:'admin.listLeases',accessToken});if(r?.ok===false)throw new Error(r.error);leases=Array.isArray(r?.leases)?r.leases:[];apply()}catch(e){console.error('Unable to load lease statuses',e)}}
+  const observer=new MutationObserver(()=>{if(leases.length)apply()});const register=document.querySelector('#tenantRegister');if(register)observer.observe(register,{childList:true,subtree:true});
+  window.HLONYANE_ADMIN_LEASES={reload:load};
+  load();
+})();
