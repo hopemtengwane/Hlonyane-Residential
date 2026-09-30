@@ -2,8 +2,9 @@
   const APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbyTFbn9riBXqN7zxocqEmYUDhE8IlQJvU3QGBIRvbXgobN6IsXo_PcU76IkP32eEDJGlw/exec';
   const readJSON=(key,fallback={})=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
   const session=readJSON('hlonyaneTenantSession',{});
-  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   let messages=[];
+  let loading=false;
 
   function ensureStyles(){
     if(document.querySelector('#tenantLandlordMessageStyles'))return;
@@ -42,19 +43,34 @@
     return Number.isNaN(d.getTime())?String(value):d.toLocaleString('en-ZA',{dateStyle:'medium',timeStyle:'short'});
   }
 
+  function unreadCount(){
+    return messages.filter(m=>m.direction==='Admin to Tenant'&&String(m.status||'Unread').toLowerCase()!=='read').length;
+  }
+
+  function renderBadge(){
+    const unread=unreadCount();
+    const nav=document.querySelector('.nav[data-target="messages"]');
+    if(!nav)return;
+    let badge=nav.querySelector('b');
+    if(!badge){
+      badge=document.createElement('b');
+      nav.append(badge);
+    }
+    badge.hidden=!unread;
+    badge.textContent=String(unread);
+    badge.className='portal-unread-badge';
+  }
+
   function render(){
     ensureStyles();
+    renderBadge();
     const inbox=document.querySelector('#messageInbox');
     if(!inbox)return;
-    const unread=messages.filter(m=>m.direction==='Admin to Tenant'&&String(m.status||'Unread').toLowerCase()!=='read').length;
     inbox.innerHTML=`<div class="portal-message-list">${messages.length?messages.map(m=>{
       const incoming=m.direction==='Admin to Tenant';
       const isUnread=incoming&&String(m.status||'Unread').toLowerCase()!=='read';
       return `<article class="portal-message-card ${incoming?'incoming':'outgoing'} ${isUnread?'unread':''}" ${isUnread?`data-incoming-id="${esc(m.id)}"`:''}><span class="portal-message-direction">${incoming?'Hlonyane Residential → You':'You → Hlonyane Residential'}</span><h3>${esc(m.subject||'Message')}</h3><div class="portal-message-meta">${esc(m.category||'General')} · ${esc(fmt(m.createdAt))}${incoming&&m.sentBy?' · '+esc(m.sentBy):''}</div><p>${esc(m.message||'')}</p></article>`;
     }).join(''):'<div class="portal-message-empty">No messages yet.</div>'}</div>`;
-    const nav=document.querySelector('.nav[data-target="messages"]');
-    let badge=nav?.querySelector('b');
-    if(nav&&badge){badge.hidden=!unread;badge.textContent=String(unread);badge.className='portal-unread-badge';}
     inbox.querySelectorAll('[data-incoming-id]').forEach(card=>{
       card.addEventListener('click',()=>{
         const id=card.dataset.incomingId;
@@ -67,7 +83,8 @@
   }
 
   async function load(){
-    if(!session.email||!(session.tenantId||session.id))return;
+    if(loading||!session.email||!(session.tenantId||session.id))return;
+    loading=true;
     try{
       const result=await jsonp({action:'tenant.listMessages',email:session.email,tenantId:session.tenantId||session.id});
       if(result?.ok===false)throw new Error(result.error||'Unable to load messages.');
@@ -75,6 +92,8 @@
       render();
     }catch(error){
       console.error('Unable to load portal messages:',error);
+    }finally{
+      loading=false;
     }
   }
 
@@ -83,6 +102,14 @@
     if(nav)setTimeout(load,100);
   });
 
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible')load();
+  });
+
+  window.addEventListener('focus',load);
+  window.addEventListener('load',()=>setTimeout(load,350),{once:true});
+  setTimeout(load,700);
+  setInterval(load,60000);
+
   window.HLONYANE_TENANT_MESSAGES={reload:load};
-  requestAnimationFrame(()=>requestAnimationFrame(load));
 })();
