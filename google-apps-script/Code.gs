@@ -58,7 +58,7 @@ function doGet(e) {
       requireAdmin_(p.accessToken || '');
       result = {ok:true, tenants:listTenants_()};
     }
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.5'};
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.6'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -74,6 +74,9 @@ function doPost(e) {
     if (action === 'tenant.passwordLogin') {
       return json_(passwordTenantLogin_(body.email || '', body.password || ''));
     }
+    if (action === 'tenant.sendMessage') {
+      return json_(submitTenantMessage_(body));
+    }
 
     if (action.startsWith('admin.')) {
       const admin = requireAdmin_(body.accessToken);
@@ -81,6 +84,8 @@ function doPost(e) {
       if (action === 'admin.listTenants') return json_({ok:true, tenants:listTenants_()});
       if (action === 'admin.deleteTenant') return json_(deleteTenant_(body.email || body.tenantId, admin.email));
       if (action === 'admin.saveSiteConfig') return json_(saveSiteConfig_(body.config || {}, admin.email));
+      if (action === 'admin.listPortalMessages') return json_({ok:true, messages:listPortalMessages_()});
+      if (action === 'admin.markPortalMessageRead') return json_(markPortalMessageRead_(body.messageId || '', admin.email));
       throw new Error('Unsupported admin action');
     }
     throw new Error('Unsupported action');
@@ -307,7 +312,7 @@ function json_(obj) {
 }
 
 function jsonpOrJson_(obj, callback) {
-  const cb = String(callback || '').replace(/[^a-zA-Z0-9_$\.]/g,'');
+  const cb = String(callback || '').replace(/[^a-zA-Z0-9_$\\.]/g,'');
   if (!cb) return json_(obj);
   return ContentService.createTextOutput(cb + '(' + JSON.stringify(obj) + ');').setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
