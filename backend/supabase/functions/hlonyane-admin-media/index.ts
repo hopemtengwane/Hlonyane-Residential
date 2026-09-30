@@ -18,7 +18,7 @@ const REPO_OWNER = 'hopemtengwane';
 const REPO_NAME = 'Hlonyane-Residential';
 const REPO_BRANCH = 'main';
 const SITE_CONFIG_PATH = 'site-config.json';
-const APPS_SCRIPT_URL = Deno.env.get('HLONYANE_APPS_SCRIPT_URL') || 'https://script.google.com/macros/s/AKfycbxHDzhEZsxYYFff3cGwUWu5iIWpQJUNsaXc4hDDryWILOL-uuwhL-pBbeFKxv2yDJRjCA/exec';
+const APPS_SCRIPT_URL = Deno.env.get('HLONYANE_APPS_SCRIPT_URL') || 'https://script.google.com/macros/s/AKfycbyTFbn9riBXqN7zxocqEmYUDhE8IlQJvU3QGBIRvbXgobN6IsXo_PcU76IkP32eEDJGlw/exec';
 const ALLOWED_FOLDERS = new Set([
   'property-photos/admin',
   'hero-photos/admin',
