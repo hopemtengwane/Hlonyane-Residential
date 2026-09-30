@@ -58,7 +58,7 @@ function doGet(e) {
       requireAdmin_(p.accessToken || '');
       result = {ok:true, tenants:listTenants_()};
     }
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.4'};
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.5'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -70,6 +70,11 @@ function doPost(e) {
     const body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     const action = String(body.action || '');
     if (!action) throw new Error('Missing action');
+
+    if (action === 'tenant.passwordLogin') {
+      return json_(passwordTenantLogin_(body.email || '', body.password || ''));
+    }
+
     if (action.startsWith('admin.')) {
       const admin = requireAdmin_(body.accessToken);
       if (action === 'admin.syncTenants') return json_(syncTenants_(body.tenants || [], admin.email));
@@ -108,8 +113,17 @@ function headers_(sh) {
   return sh.getRange(1,1,1,last).getDisplayValues()[0].map(x => String(x).trim());
 }
 
-function listTenants_() {
+function ensureTenantPasswordColumn_() {
   const sh = sheet_('Tenants');
+  const headers = headers_(sh);
+  if (!headers.includes('Password')) {
+    sh.getRange(1, headers.length + 1).setValue('Password');
+  }
+  return sh;
+}
+
+function listTenants_() {
+  const sh = ensureTenantPasswordColumn_();
   const headers = headers_(sh);
   if (sh.getLastRow() < 2) return [];
   const rows = sh.getRange(2,1,sh.getLastRow()-1,headers.length).getDisplayValues();
@@ -124,6 +138,49 @@ function findTenantByEmail_(email) {
   const key = String(email || '').trim().toLowerCase();
   if (!key) return null;
   return listTenants_().find(t => String(t.Email || '').trim().toLowerCase() === key) || null;
+}
+
+function tenantPayload_(tenant, email) {
+  const clean = String(email || tenant.Email || '').trim().toLowerCase();
+  const name = String(tenant['Full Name'] || tenant.Name || '').trim();
+  const property = [String(tenant.Property || '').trim(), String(tenant.Unit || '').trim()].filter(Boolean).join(' · ');
+  return {
+    tenantId:String(tenant['Tenant ID'] || ''),
+    name:name,
+    email:clean,
+    mobile:String(tenant.Mobile || ''),
+    emergency:String(tenant['Emergency Contact'] || ''),
+    property:property,
+    bedroomType:String(tenant['Bedroom Type'] || ''),
+    furnishing:String(tenant.Furnishing || 'Unfurnished'),
+    rent:String(tenant['Monthly Rent'] || ''),
+    deposit:String(tenant.Deposit || ''),
+    leaseStart:String(tenant['Lease Start'] || ''),
+    leaseEnd:String(tenant['Lease End'] || ''),
+    awayFrom:String(tenant['Away From'] || ''),
+    awayTo:String(tenant['Away To'] || ''),
+    noticeStatus:String(tenant['Notice Status'] || ''),
+    noticeStart:String(tenant['Notice Start'] || ''),
+    photo:String(tenant['Profile Photo'] || '')
+  };
+}
+
+function passwordTenantLogin_(email, password) {
+  const clean = String(email || '').trim().toLowerCase();
+  const entered = String(password || '');
+  if (!/^\S+@\S+\.\S+$/.test(clean)) return {ok:false, error:'Enter a valid email address.'};
+  if (!entered) return {ok:false, error:'Enter your tenant portal password.'};
+
+  const tenant = findTenantByEmail_(clean);
+  if (!tenant || String(tenant.Status || 'Active').toLowerCase() !== 'active') {
+    return {ok:false, error:'This email is not enrolled as an active Hlonyane tenant.'};
+  }
+
+  const stored = String(tenant.Password || '');
+  if (!stored) return {ok:false, error:'A portal password has not been set for this tenant yet. Please contact the property manager.'};
+  if (entered !== stored) return {ok:false, error:'Incorrect password for this tenant account.'};
+
+  return {ok:true, tenant:tenantPayload_(tenant, clean)};
 }
 
 function requestTenantOtp_(email) {
@@ -152,27 +209,7 @@ function verifyTenantOtp_(email, code) {
   const tenant = findTenantByEmail_(clean);
   if (!tenant || String(tenant.Status || 'Active').toLowerCase() !== 'active') return {ok:false, error:'This tenant account is not active.'};
   cache.remove('tenant-otp:' + clean);
-  const name = String(tenant['Full Name'] || tenant.Name || '').trim();
-  const property = [String(tenant.Property || '').trim(), String(tenant.Unit || '').trim()].filter(Boolean).join(' · ');
-  return {ok:true, tenant:{
-    tenantId:String(tenant['Tenant ID'] || ''),
-    name:name,
-    email:clean,
-    mobile:String(tenant.Mobile || ''),
-    emergency:String(tenant['Emergency Contact'] || ''),
-    property:property,
-    bedroomType:String(tenant['Bedroom Type'] || ''),
-    furnishing:String(tenant.Furnishing || 'Unfurnished'),
-    rent:String(tenant['Monthly Rent'] || ''),
-    deposit:String(tenant.Deposit || ''),
-    leaseStart:String(tenant['Lease Start'] || ''),
-    leaseEnd:String(tenant['Lease End'] || ''),
-    awayFrom:String(tenant['Away From'] || ''),
-    awayTo:String(tenant['Away To'] || ''),
-    noticeStatus:String(tenant['Notice Status'] || ''),
-    noticeStart:String(tenant['Notice Start'] || ''),
-    photo:String(tenant['Profile Photo'] || '')
-  }};
+  return {ok:true, tenant:tenantPayload_(tenant, clean)};
 }
 
 function tenantId_(email) {
@@ -195,7 +232,7 @@ function propertyParts_(property) {
 }
 
 function syncTenants_(tenants, adminEmail) {
-  const sh = sheet_('Tenants');
+  const sh = ensureTenantPasswordColumn_();
   const headers = headers_(sh);
   const now = new Date();
   const existing = listTenants_();
@@ -218,6 +255,7 @@ function syncTenants_(tenants, adminEmail) {
       'Unit': p.unit,
       'Bedroom Type': p.bedroomType,
       'Furnishing': String(t.furnishing || 'Unfurnished'),
+      'Password': String(t.password || old.Password || '').trim(),
       'Monthly Rent': String(t.rent || old['Monthly Rent'] || ''),
       'Deposit': String(t.deposit || old.Deposit || ''),
       'Lease Start': String(t.leaseStart || old['Lease Start'] || ''),
@@ -233,6 +271,7 @@ function syncTenants_(tenants, adminEmail) {
       'Updated By': adminEmail
     };
   }).filter(Boolean);
+
   if (sh.getLastRow() > 1) sh.getRange(2,1,sh.getLastRow()-1,Math.max(headers.length,1)).clearContent();
   if (clean.length) {
     const values = clean.map(obj => headers.map(h => obj[h] == null ? '' : obj[h]));
@@ -246,7 +285,7 @@ function syncTenants_(tenants, adminEmail) {
 function deleteTenant_(identity, adminEmail) {
   const key = String(identity || '').trim().toLowerCase();
   if (!key) throw new Error('Tenant email or ID required');
-  const sh = sheet_('Tenants');
+  const sh = ensureTenantPasswordColumn_();
   const headers = headers_(sh);
   const emailCol = headers.indexOf('Email');
   const idCol = headers.indexOf('Tenant ID');
