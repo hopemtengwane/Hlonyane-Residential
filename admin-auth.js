@@ -34,6 +34,9 @@
       await loadScript('tenant-sheet-sync.js?v=20260930-2');
       await window.HLONYANE_TENANT_SHEET_READY;
       window.HLONYANE_TENANT_DEMO_CLEANUP?.run();
+      setLoader('Checking portal messages…');
+      await loadScript('admin-portal-messages.js?v=20260930-1');
+      await window.HLONYANE_ADMIN_PORTAL_MESSAGES_READY;
       document.documentElement.classList.add('admin-ready');
     }catch(error){
       console.error('Unable to load Hlonyane admin workspace:',error);
