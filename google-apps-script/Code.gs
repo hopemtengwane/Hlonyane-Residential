@@ -42,9 +42,12 @@ function doGet(e) {
     if (action === 'tenant.requestOtp') result = requestTenantOtp_(p.email || '');
     else if (action === 'tenant.verifyOtp') result = verifyTenantOtp_(p.email || '', p.code || '');
     else if (action === 'tenant.listMessages') result = listTenantMessages_(p.email || '', p.tenantId || '');
+    else if (action === 'tenant.getLease') result = getTenantLease_(p.email || '', p.tenantId || '');
     else if (action === 'site.getConfig') result = getSiteConfig_();
     else if (action === 'admin.listTenants') { requireAdmin_(p.accessToken || ''); result = {ok:true, tenants:listTenants_()}; }
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.7'};
+    else if (action === 'admin.listLeases') { requireAdmin_(p.accessToken || ''); result = {ok:true, leases:listLeaseStatuses_()}; }
+    else if (action === 'admin.getLease') { requireAdmin_(p.accessToken || ''); result = getAdminLease_(p.tenantId || ''); }
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.8'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -59,6 +62,8 @@ function doPost(e) {
     if (action === 'tenant.passwordLogin') return json_(passwordTenantLogin_(body.email || '', body.password || ''));
     if (action === 'tenant.sendMessage') return json_(submitTenantMessage_(body));
     if (action === 'tenant.markMessageRead') return json_(markTenantMessageRead_(body.messageId || '', body.email || '', body.tenantId || ''));
+    if (action === 'tenant.saveLeaseDraft') return json_(saveTenantLeaseDraft_(body));
+    if (action === 'tenant.submitLease') return json_(submitTenantLease_(body));
 
     if (action.startsWith('admin.')) {
       const admin = requireAdmin_(body.accessToken);
@@ -69,6 +74,7 @@ function doPost(e) {
       if (action === 'admin.listPortalMessages') return json_({ok:true, messages:listPortalMessages_()});
       if (action === 'admin.markPortalMessageRead') return json_(markPortalMessageRead_(body.messageId || '', admin.email));
       if (action === 'admin.sendPortalMessage') return json_(adminSendPortalMessage_(body, admin.email));
+      if (action === 'admin.signLease') return json_(signLeaseAsLandlord_(body, admin.email));
       throw new Error('Unsupported admin action');
     }
     throw new Error('Unsupported action');
