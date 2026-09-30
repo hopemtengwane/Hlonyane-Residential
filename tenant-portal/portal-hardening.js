@@ -90,23 +90,35 @@
   }
 
   function enforceDocuments(){
-    document.querySelectorAll('.doc button').forEach(button=>{
-      const card=button.closest('.doc');
-      const title=card?.querySelector('h3')?.textContent?.trim()||'document';
-      button.setAttribute('aria-label',`Open ${title}`);
-      button.title=`Open ${title}`;
-      button.innerHTML='<img src="download-icon.png" alt="" aria-hidden="true" style="display:block;width:34px;height:34px;object-fit:contain">';
+    document.querySelectorAll('.doc').forEach(card=>{
+      const title=card.querySelector('h3')?.textContent?.trim()||'document';
+      let action=card.querySelector('.doc-action');
+      const oldButton=card.querySelector('button');
+      if(!action){
+        action=document.createElement('a');
+        action.className='doc-action';
+        if(oldButton)oldButton.replaceWith(action);else card.append(action);
+      }
+      action.innerHTML='<img src="download-icon.svg" alt="" aria-hidden="true">';
+      action.setAttribute('aria-label',`Open ${title}`);
+      action.title=`Open ${title}`;
+      if(card.dataset.doc==='lease'){
+        action.href='lease.html';
+        card.style.cursor='pointer';
+        card.setAttribute('role','link');
+        card.setAttribute('tabindex','0');
+        const openLease=event=>{
+          if(event?.target?.closest('.doc-action'))return;
+          location.href='lease.html';
+        };
+        card.onclick=openLease;
+        card.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();location.href='lease.html';}};
+      }else{
+        action.removeAttribute('href');
+        action.classList.add('disabled');
+        action.setAttribute('aria-disabled','true');
+      }
     });
-
-    const lease=document.querySelector('.doc[data-doc="lease"]');
-    if(lease){
-      lease.style.cursor='pointer';
-      lease.setAttribute('role','link');
-      lease.setAttribute('tabindex','0');
-      const openLease=()=>{location.href='lease.html'};
-      lease.onclick=openLease;
-      lease.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openLease();}};
-    }
   }
 
   function ensureMessageStyles(){
