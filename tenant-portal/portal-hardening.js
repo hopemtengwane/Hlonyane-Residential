@@ -89,12 +89,24 @@
     if(history&&!Array.isArray(session.payments))history.innerHTML='<div class="tr th"><span>Date</span><span>Description</span><span>Status</span><span>Amount</span></div><div class="empty-payment">No payment history has been added yet.</div>';
   }
 
-  function enforceDownloadIcons(){
+  function enforceDocuments(){
     document.querySelectorAll('.doc button').forEach(button=>{
-      button.setAttribute('aria-label','Download document');
-      button.title='Download document';
-      button.textContent='↓';
+      const card=button.closest('.doc');
+      const title=card?.querySelector('h3')?.textContent?.trim()||'document';
+      button.setAttribute('aria-label',`Open ${title}`);
+      button.title=`Open ${title}`;
+      button.innerHTML='<img src="download-icon.png" alt="" aria-hidden="true" style="display:block;width:34px;height:34px;object-fit:contain">';
     });
+
+    const lease=document.querySelector('.doc[data-doc="lease"]');
+    if(lease){
+      lease.style.cursor='pointer';
+      lease.setAttribute('role','link');
+      lease.setAttribute('tabindex','0');
+      const openLease=()=>{location.href='lease.html'};
+      lease.onclick=openLease;
+      lease.onkeydown=event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openLease();}};
+    }
   }
 
   function ensureMessageStyles(){
@@ -156,6 +168,6 @@
     },true);
   }
 
-  function run(){ensureNav();ensureQuickActions();enforceGatePhoto();clearHardcodedPayments();enforceDownloadIcons();enableTenantMessaging()}
+  function run(){ensureNav();ensureQuickActions();enforceGatePhoto();clearHardcodedPayments();enforceDocuments();enableTenantMessaging()}
   requestAnimationFrame(()=>requestAnimationFrame(run));
 })();
