@@ -37,6 +37,8 @@
       setLoader('Checking portal messages…');
       await loadScript('admin-portal-messages.js?v=20260930-1');
       await window.HLONYANE_ADMIN_PORTAL_MESSAGES_READY;
+      await loadScript('admin-landlord-messages.js?v=20260930-1');
+      await window.HLONYANE_ADMIN_LANDLORD_MESSAGES_READY;
       document.documentElement.classList.add('admin-ready');
     }catch(error){
       console.error('Unable to load Hlonyane admin workspace:',error);
