@@ -64,10 +64,11 @@
       const {data,error}=await client.auth.signInWithPassword({email:enteredEmail,password:enteredPassword});
       if(error||!data?.user){setStatus('Incorrect email address or password.');button.removeAttribute('aria-disabled');button.textContent='Log in to admin ↗';return}
       if(!isAllowed(data.user)){await client.auth.signOut();setStatus('This account is not authorised for Hlonyane Admin.');button.removeAttribute('aria-disabled');button.textContent='Log in to admin ↗';return}
+      sessionStorage.removeItem('hlonyaneAdminMessagePopupSeen');
       location.href='admin-dashboard.html';
     });
   }
 
-  document.querySelector('.workspace-signout')?.addEventListener('click',async event=>{event.preventDefault();if(client)await client.auth.signOut();location.href='admin.html'});
+  document.querySelector('.workspace-signout')?.addEventListener('click',async event=>{event.preventDefault();sessionStorage.removeItem('hlonyaneAdminMessagePopupSeen');if(client)await client.auth.signOut();location.href='admin.html'});
   if(isDashboard)guardDashboard();else initLogin();
 })();
