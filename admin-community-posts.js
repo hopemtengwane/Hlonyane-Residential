@@ -1,7 +1,7 @@
 (() => {
   const PORTAL_KEY='hlonyaneTenantPortalV42';
   const SITE_KEY='hlonyaneSiteStateV41';
-  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
   const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key)||'null')??fallback}catch(e){return fallback}};
   const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
   const toast=message=>{const el=document.querySelector('#cmsToast');if(!el)return;el.textContent=message;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600)};
@@ -19,15 +19,30 @@
     return portal;
   }
 
+  const asPublished=post=>({id:post.id,name:post.name||'Tenant',relationship:post.relationship||'Current tenant',text:post.text||'',date:post.date||'',approvedAt:post.approvedAt||new Date().toISOString()});
+
   async function publish(post){
     const state=read(SITE_KEY,{});
     const list=Array.isArray(state.communityPosts)?state.communityPosts:[];
-    const item={id:post.id,name:post.name||'Tenant',relationship:post.relationship||'Current tenant',text:post.text||'',date:post.date||'',approvedAt:new Date().toISOString()};
-    const next=[item,...list.filter(x=>String(x.id)!==String(item.id))];
-    state.communityPosts=next;
+    const item=asPublished(post);
+    state.communityPosts=[item,...list.filter(x=>String(x.id)!==String(item.id))];
     write(SITE_KEY,state);
     if(!window.HLONYANE_ADMIN_SITE_CONFIG?.save)throw new Error('Central website settings service is not ready.');
     await window.HLONYANE_ADMIN_SITE_CONFIG.save({quiet:true});
+  }
+
+  async function migrateApproved(){
+    const portal=normalisePosts();
+    const approved=portal.posts.filter(p=>String(p.status||'').toLowerCase()==='approved');
+    if(!approved.length||!window.HLONYANE_ADMIN_SITE_CONFIG?.save)return;
+    const state=read(SITE_KEY,{});
+    const current=Array.isArray(state.communityPosts)?state.communityPosts:[];
+    const ids=new Set(current.map(p=>String(p.id)));
+    const missing=approved.filter(p=>!ids.has(String(p.id)));
+    if(!missing.length)return;
+    state.communityPosts=[...missing.map(asPublished),...current];
+    write(SITE_KEY,state);
+    try{await window.HLONYANE_ADMIN_SITE_CONFIG.save({quiet:true});toast(`${missing.length} previously approved community post${missing.length===1?'':'s'} published.`)}catch(e){console.warn('Unable to migrate approved community posts',e)}
   }
 
   function render(){
@@ -73,7 +88,7 @@
   });
 
   function wait(){
-    if(document.documentElement.classList.contains('admin-ready')&&document.querySelector('#commentEditors'))render();
+    if(document.documentElement.classList.contains('admin-ready')&&document.querySelector('#commentEditors')){render();setTimeout(migrateApproved,300)}
     else setTimeout(wait,250);
   }
   wait();
