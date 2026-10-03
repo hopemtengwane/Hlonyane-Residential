@@ -31,11 +31,12 @@
       await loadScript('admin-tenant-form-stability.js?v=20260930-1');
       await loadScript('admin-tenant-cleanup.js?v=20260929-1');
       setLoader('Loading tenant register…');
-      await loadScript('tenant-sheet-sync.js?v=20260930-2');
+      await loadScript('tenant-sheet-sync.js?v=20261003-1');
       await window.HLONYANE_TENANT_SHEET_READY;
       window.HLONYANE_TENANT_DEMO_CLEANUP?.run();
+      await loadScript('admin-tenant-meta.js?v=20261003-1');
       setLoader('Checking lease status…');
-      await loadScript('admin-lease-status.js?v=20260930-2');
+      await loadScript('admin-lease-status.js?v=20261003-1');
       setLoader('Checking portal messages…');
       await loadScript('admin-portal-messages.js?v=20260930-1');
       await window.HLONYANE_ADMIN_PORTAL_MESSAGES_READY;
