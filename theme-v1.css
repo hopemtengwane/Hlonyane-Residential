@@ -1,14 +1,14 @@
 :root { --ink:#1a1c1b; --gold:#a67f2d; --green:#357d36; --paper:#fafbf9; --muted:#58615a; --line:#d6ded5; }
-html { scroll-padding-top: 125px; }
-.site-header { height:108px; padding:0 4.5vw 0 calc(4.5vw + 380px); background:#171717; border-bottom:3px solid #b9974a; overflow:visible; align-items:center; }
-.brand { position:absolute; left:4.5vw; top:2px; z-index:4; display:block; width:350px; height:178px; line-height:0; background:url("logo-transparent.svg") center/contain no-repeat; }
+html { scroll-padding-top: 112px; }
+.site-header { height:96px; padding:0 4.5vw 0 calc(4.5vw + 380px); background:#171717; border-bottom:3px solid #b9974a; overflow:visible; align-items:center; }
+.brand { position:absolute; left:4.5vw; top:-10px; z-index:4; display:block; width:350px; height:178px; line-height:0; background:url("logo-transparent.svg") center/contain no-repeat; }
 .brand img { display:block; width:350px; height:178px; object-fit:contain; object-position:center; opacity:0; }
 .site-nav { position:relative; z-index:5; margin-left:auto; }
 .site-nav a { color:#f7f6ef; }
 .site-nav a:hover { color:#d7b65f; }
 .nav-cta { background:var(--green)!important; color:white!important; }
 .menu-toggle { color:#d7b65f; position:relative; z-index:5; }
-.hero { min-height:816px; padding-top:225px; }
+.hero { min-height:816px; padding-top:210px; }
 .hero-overlay { background:linear-gradient(90deg,rgba(12,27,17,.90),rgba(13,29,19,.65) 52%,rgba(10,24,14,.25)); }
 .hero h1 em { color:#d9b663; }
 .hero .kicker { color:#e2c982; }
@@ -42,17 +42,17 @@ input[type=range],input[type=checkbox] { accent-color:var(--green); }
 a:focus-visible,button:focus-visible { outline:3px solid #d7b65f; outline-offset:4px; }
 @media (max-width:1150px) {
   .site-header { padding-left:calc(3vw + 315px); padding-right:3vw; }
-  .brand { left:3vw; width:300px; height:153px; }
+  .brand { left:3vw; width:300px; height:153px; top:-8px; }
   .brand img { width:300px; height:153px; }
   .site-nav { gap:16px; }
   .site-nav a { font-size:13px; }
 }
 @media (max-width:800px) {
-  html { scroll-padding-top:92px; }
-  .site-header { height:82px; padding:0 18px; }
-  .brand { left:14px; top:1px; width:225px; height:112px; }
+  html { scroll-padding-top:86px; }
+  .site-header { height:76px; padding:0 18px; }
+  .brand { left:12px; top:-7px; width:225px; height:112px; }
   .brand img { width:225px; height:112px; }
   .menu-toggle { display:block; margin-left:auto; }
-  .site-nav { top:82px; background:#171717; border-bottom:1px solid #b9974a; }
-  .hero { min-height:742px; padding-top:160px; }
+  .site-nav { top:76px; background:#171717; border-bottom:1px solid #b9974a; }
+  .hero { min-height:742px; padding-top:150px; }
 }
