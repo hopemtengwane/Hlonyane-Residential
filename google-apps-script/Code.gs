@@ -47,7 +47,7 @@ function doGet(e) {
     else if (action === 'admin.listTenants') { requireAdmin_(p.accessToken || ''); result = {ok:true, tenants:listTenants_()}; }
     else if (action === 'admin.listLeases') { requireAdmin_(p.accessToken || ''); result = {ok:true, leases:listLeaseStatuses_()}; }
     else if (action === 'admin.getLease') { requireAdmin_(p.accessToken || ''); result = getAdminLease_(p.tenantId || ''); }
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.9'};
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.10'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -61,6 +61,7 @@ function doPost(e) {
     if (!action) throw new Error('Missing action');
     if (action === 'tenant.passwordLogin') return json_(passwordTenantLogin_(body.email || '', body.password || ''));
     if (action === 'tenant.setPresence') return json_(saveTenantPresence_(body));
+    if (action === 'tenant.submitNotice') return json_(saveTenantNotice_(body));
     if (action === 'tenant.sendMessage') return json_(submitTenantMessage_(body));
     if (action === 'tenant.markMessageRead') return json_(markTenantMessageRead_(body.messageId || '', body.email || '', body.tenantId || ''));
     if (action === 'tenant.saveLeaseDraft') return json_(saveTenantLeaseDraft_(body));
