@@ -42,7 +42,7 @@
       await loadScript('admin-tenant-cleanup.js?v=20260929-1');
 
       setLoader('Loading tenant register…');
-      await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-3'),{timeout:9000});
+      await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-4'),{timeout:9000});
       await safeStep('Tenant database',()=>window.HLONYANE_TENANT_SHEET_READY,{timeout:10000});
       window.HLONYANE_TENANT_DEMO_CLEANUP?.run();
       window.HLONYANE_TENANT_META?.refresh?.();
