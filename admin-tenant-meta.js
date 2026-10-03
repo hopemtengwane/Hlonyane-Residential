@@ -61,18 +61,10 @@
     const dot=row.querySelector('.presence-dot');
     if(dot)dot.title=away?`Away until ${fmt(until)}`:'Home';
 
-    let meta=row.querySelector('.tenant-glance-meta');
-    if(!meta){
-      meta=document.createElement('span');
-      meta.className='tenant-glance-meta';
-      meta.style.cssText='font-size:12px;color:#66736d;white-space:nowrap';
-      row.querySelector('.tenant-summary')?.append(meta);
-    }
-    const bits=[];
-    if(away)bits.push(`Away until ${fmt(until)}`);
-    if(leaseEnd?.value)bits.push(`Lease expires ${fmt(leaseEnd.value)}`);
-    const next=bits.join(' · ');
-    if(meta.textContent!==next)meta.textContent=next;
+    // Do not repeat Away Until / Lease Expiry in the collapsed summary.
+    // Those values are already visible in the expanded tenant fields and were
+    // colliding with the lease status badge in the summary row.
+    row.querySelector('.tenant-glance-meta')?.remove();
 
     if(awayTo&&!awayTo.dataset.metaBound){
       awayTo.dataset.metaBound='1';
