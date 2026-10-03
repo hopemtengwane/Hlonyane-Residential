@@ -1,8 +1,8 @@
 :root { --ink:#1a1c1b; --gold:#a67f2d; --green:#357d36; --paper:#fafbf9; --muted:#58615a; --line:#d6ded5; }
 html { scroll-padding-top: 125px; }
 .site-header { height:108px; padding:0 4.5vw 0 calc(4.5vw + 380px); background:#171717; border-bottom:3px solid #b9974a; overflow:visible; align-items:center; }
-.brand { position:absolute; left:4.5vw; top:2px; z-index:4; display:block; line-height:0; }
-.brand img { display:block; width:350px; height:178px; object-fit:contain; object-position:center; }
+.brand { position:absolute; left:4.5vw; top:2px; z-index:4; display:block; width:350px; height:178px; line-height:0; background:url("logo-transparent.svg") center/contain no-repeat; }
+.brand img { display:block; width:350px; height:178px; object-fit:contain; object-position:center; opacity:0; }
 .site-nav { position:relative; z-index:5; margin-left:auto; }
 .site-nav a { color:#f7f6ef; }
 .site-nav a:hover { color:#d7b65f; }
@@ -18,7 +18,6 @@ html { scroll-padding-top: 125px; }
 .eyebrow,.section-index,.location { color:#3d7438; }
 .homes { background:#edf2ec; }
 .dashboard-preview { background:#edf2ec; border-top:3px solid #b9974a; }
-
 .login-heading { display:flex; align-items:center; gap:10px; color:#52656a; font-size:13px; letter-spacing:.08em; text-transform:uppercase; border-bottom:1px solid #d9ded9; padding-bottom:15px; }
 .login-heading .status-dot { flex:none; }
 .dashboard-preview h3 { font-size:28px; font-weight:400; margin:28px 0 8px; }
@@ -43,7 +42,7 @@ input[type=range],input[type=checkbox] { accent-color:var(--green); }
 a:focus-visible,button:focus-visible { outline:3px solid #d7b65f; outline-offset:4px; }
 @media (max-width:1150px) {
   .site-header { padding-left:calc(3vw + 315px); padding-right:3vw; }
-  .brand { left:3vw; }
+  .brand { left:3vw; width:300px; height:153px; }
   .brand img { width:300px; height:153px; }
   .site-nav { gap:16px; }
   .site-nav a { font-size:13px; }
@@ -51,7 +50,7 @@ a:focus-visible,button:focus-visible { outline:3px solid #d7b65f; outline-offset
 @media (max-width:800px) {
   html { scroll-padding-top:92px; }
   .site-header { height:82px; padding:0 18px; }
-  .brand { left:14px; top:1px; }
+  .brand { left:14px; top:1px; width:225px; height:112px; }
   .brand img { width:225px; height:112px; }
   .menu-toggle { display:block; margin-left:auto; }
   .site-nav { top:82px; background:#171717; border-bottom:1px solid #b9974a; }
