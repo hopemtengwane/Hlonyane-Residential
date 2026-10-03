@@ -3668,7 +3668,16 @@
     3,
     4
   ],
-  "communityPosts": [],
+  "communityPosts": [
+    {
+      "id": "community-1791042671171-0",
+      "name": "Msindisi Mtengwane",
+      "relationship": "Current tenant",
+      "text": "I absolutely love living here. Very clean, safe and well looked after. Tenants are happy and respectful, and the landlord knows what they are doing. Maintenance is always prompt, efficient and unintrusive as possible",
+      "date": "2026/10/03",
+      "approvedAt": "2026-10-03T15:51:56.029Z"
+    }
+  ],
   "contacts": {
     "phone": "072 455 9413",
     "email": "nomondehlonyane@gmail.com",
@@ -3676,6 +3685,6 @@
     "portalEmail": "msindisi.mtengwane@gmail.com"
   },
   "_meta": {
-    "updatedAt": 1791042710464
+    "updatedAt": 1791042716031
   }
 }
