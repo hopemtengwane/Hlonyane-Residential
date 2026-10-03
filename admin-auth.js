@@ -46,10 +46,13 @@
       await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-5'),{timeout:9000});
       await safeStep('Tenant database',()=>window.HLONYANE_TENANT_SHEET_READY,{timeout:10000});
       window.HLONYANE_TENANT_META?.refresh?.();
+      await safeStep('Tenant filters',()=>loadScript('admin-tenant-filters.js?v=20261003-1'),{timeout:6000});
+      window.HLONYANE_TENANT_FILTERS?.refresh?.();
 
       setLoader('Opening Admin workspace…');
       document.documentElement.classList.add('admin-ready');
       setTimeout(()=>window.HLONYANE_TENANT_META?.refresh?.(),100);
+      setTimeout(()=>window.HLONYANE_TENANT_FILTERS?.refresh?.(),120);
       void loadOptionalServices();
     }catch(error){
       console.error('Unable to load a core Hlonyane admin component:',error);
