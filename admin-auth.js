@@ -1,9 +1,9 @@
 (() => {
-  const SUPABASE_URL = 'https://aovespfbrgctyxhxssji.supabase.co';
-  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
-  const HLONYANE_ADMINS = new Set(['msindisi.mtengwane@gmail.com','nomondehlonyane@gmail.com']);
-  const isDashboard = /admin-dashboard\.html$/i.test(location.pathname);
-  const client = window.supabase?.createClient ? window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}) : null;
+  const SUPABASE_URL='https://aovespfbrgctyxhxssji.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY='sb_publishable_konWtcjta3QLKDoRgUao9Q_YmSEBi2a';
+  const HLONYANE_ADMINS=new Set(['msindisi.mtengwane@gmail.com','nomondehlonyane@gmail.com']);
+  const isDashboard=/admin-dashboard\.html$/i.test(location.pathname);
+  const client=window.supabase?.createClient?window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
   const normalise=value=>String(value||'').trim().toLowerCase();
   const isAllowed=user=>!!user?.email&&HLONYANE_ADMINS.has(normalise(user.email));
   const setStatus=message=>{let status=document.querySelector('.admin-login-status');if(!status){status=document.createElement('p');status.className='admin-login-status';status.setAttribute('role','status');document.querySelector('.admin-login')?.append(status)}status.textContent=message||''};
@@ -11,6 +11,14 @@
   const withTimeout=(promise,ms,label='Operation')=>Promise.race([Promise.resolve(promise),new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${label} timed out after ${Math.round(ms/1000)} seconds.`)),ms))]);
   const loadScript=(src,ms=8000)=>withTimeout(new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(new Error(`Unable to load ${src}`));document.body.append(script)}),ms,`Loading ${src}`);
   async function safeStep(label,work,{timeout=8000}={}){try{return await withTimeout(typeof work==='function'?work():work,timeout,label)}catch(error){console.warn(`Hlonyane Admin: ${label} skipped`,error);return null}}
+
+  async function loadOptionalServices(){
+    await safeStep('Lease status',()=>loadScript('admin-lease-status.js?v=20261003-4'),{timeout:6000});
+    window.HLONYANE_ADMIN_LEASES?.apply?.();
+    await safeStep('Portal message script',()=>loadScript('admin-portal-messages.js?v=20261003-2'),{timeout:6000});
+    await safeStep('Portal messages',()=>window.HLONYANE_ADMIN_PORTAL_MESSAGES_READY,{timeout:7000});
+    await safeStep('Landlord messages',async()=>{await loadScript('admin-landlord-messages.js?v=20261003-2',6000);await window.HLONYANE_ADMIN_LANDLORD_MESSAGES_READY},{timeout:7000});
+  }
 
   async function guardDashboard(){
     if(!client){location.replace('admin.html?error=supabase');return}
@@ -25,33 +33,29 @@
       await loadScript('pricing-policy.js?v=20260929-1');
       await loadScript('admin-site-config.js?v=20260929-4');
       await safeStep('Website settings',()=>window.HLONYANE_ADMIN_SITE_CONFIG?.bootstrap(),{timeout:10000});
+
       setLoader('Preparing Admin workspace…');
       await loadScript('admin-state-recovery.js?v=20260929-2');
       await loadScript('admin-property-migration.js?v=20260928-1');
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
-      await loadScript('admin-tenant-form-stability.js?v=20260930-1');
       await loadScript('admin-tenant-cleanup.js?v=20260929-1');
+
       setLoader('Loading tenant register…');
-      await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-2'),{timeout:9000});
+      await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-3'),{timeout:9000});
       await safeStep('Tenant database',()=>window.HLONYANE_TENANT_SHEET_READY,{timeout:10000});
       window.HLONYANE_TENANT_DEMO_CLEANUP?.run();
-      await safeStep('Tenant register details',()=>loadScript('admin-tenant-meta.js?v=20261003-2'),{timeout:6000});
       window.HLONYANE_TENANT_META?.refresh?.();
-      setLoader('Checking lease status…');
-      await safeStep('Lease status',()=>loadScript('admin-lease-status.js?v=20261003-3'),{timeout:6000});
-      window.HLONYANE_ADMIN_LEASES?.apply?.();
-      setLoader('Checking portal messages…');
-      await safeStep('Portal message script',()=>loadScript('admin-portal-messages.js?v=20261003-1'),{timeout:6000});
-      await safeStep('Portal messages',()=>window.HLONYANE_ADMIN_PORTAL_MESSAGES_READY,{timeout:7000});
-      await safeStep('Landlord messages',async()=>{await loadScript('admin-landlord-messages.js?v=20261003-1',6000);await window.HLONYANE_ADMIN_LANDLORD_MESSAGES_READY},{timeout:7000});
-    }catch(error){console.error('Unable to load a core Hlonyane admin component:',error)}
-    finally{
-      window.HLONYANE_TENANT_META?.refresh?.();
-      window.HLONYANE_ADMIN_LEASES?.apply?.();
-      setTimeout(()=>window.HLONYANE_TENANT_META?.refresh?.(),250);
+
       setLoader('Opening Admin workspace…');
       document.documentElement.classList.add('admin-ready');
+      setTimeout(()=>window.HLONYANE_TENANT_META?.refresh?.(),100);
+      void loadOptionalServices();
+    }catch(error){
+      console.error('Unable to load a core Hlonyane admin component:',error);
+      setLoader('Opening Admin workspace…');
+      document.documentElement.classList.add('admin-ready');
+      void loadOptionalServices();
     }
   }
 
