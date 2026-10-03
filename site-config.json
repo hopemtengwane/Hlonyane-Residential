@@ -3662,8 +3662,13 @@
   },
   "parallax": {},
   "deletedComments": [],
-  "contacts": null,
+  "contacts": {
+    "phone": "072 455 9413",
+    "email": "nomondehlonyane@gmail.com",
+    "portalPhone": "072 455 9413",
+    "portalEmail": "msindisi.mtengwane@gmail.com"
+  },
   "_meta": {
-    "updatedAt": 1790708266230
+    "updatedAt": 1791023953774
   }
 }
