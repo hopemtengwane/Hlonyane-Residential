@@ -13,6 +13,20 @@
   const cls=status=>String(status||'Not started').toLowerCase().replace(/\s+/g,'-');
   const fmtDate=v=>{if(!v)return'';const d=new Date(String(v).length<=10?v+'T00:00:00':v);return Number.isNaN(d.getTime())?v:d.toLocaleDateString('en-ZA')};
 
+  function removeDuplicateLeaseLabel(summary){
+    if(!summary)return;
+    [...summary.childNodes].forEach(node=>{
+      if(node.nodeType===Node.TEXT_NODE){
+        if(/^\s*Leas(?:e)?\s*$/i.test(node.textContent||''))node.remove();
+        return;
+      }
+      if(node.nodeType!==Node.ELEMENT_NODE)return;
+      if(node.classList?.contains('lease-badge'))return;
+      const text=String(node.textContent||'').trim();
+      if(/^Leas(?:e)?$/i.test(text))node.remove();
+    });
+  }
+
   function apply(){
     styles();
     document.querySelectorAll('#tenantRegister .tenant-row').forEach(row=>{
@@ -20,14 +34,16 @@
       if(!email)return;
       const lease=leases.find(x=>String(x.tenantEmail||'').toLowerCase()===email);
       const status=lease?.status||'Not started';
+      const summary=row.querySelector('.tenant-summary');
 
-      let badge=row.querySelector('.tenant-summary .lease-badge');
-      if(!badge){badge=document.createElement('span');row.querySelector('.tenant-summary')?.append(badge)}
+      removeDuplicateLeaseLabel(summary);
+
+      let badge=summary?.querySelector('.lease-badge');
+      if(!badge){badge=document.createElement('span');summary?.append(badge)}
       badge.className='lease-badge '+cls(status);
       badge.textContent='Lease: '+status;
 
-      const stray=[...row.querySelectorAll('.tenant-summary')].flatMap(summary=>[...summary.childNodes]).find(node=>node.nodeType===Node.TEXT_NODE&&/^\s*Lease\s*$/i.test(node.textContent||''));
-      if(stray)stray.remove();
+      removeDuplicateLeaseLabel(summary);
 
       let area=row.querySelector('.tenant-lease-admin');
       if(!area){area=document.createElement('div');area.className='tenant-lease-admin';row.querySelector('.tenant-detail .tenant-fields')?.append(area)}
