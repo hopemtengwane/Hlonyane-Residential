@@ -6,7 +6,7 @@
   // public site does not wait for GitHub Pages to publish/cache site-config.json.
   const configApiUrl='https://api.github.com/repos/hopemtengwane/Hlonyane-Residential/contents/site-config.json?ref=main';
   const configFallbackUrl='site-config.json';
-  const base=()=>({heroPhotos:null,heroText:null,propertyPhotos:{},properties:null,overnight:{},parallax:{},deletedComments:[]});
+  const base=()=>({heroPhotos:null,heroText:null,propertyPhotos:{},properties:null,overnight:{},parallax:{},deletedComments:[],communityPosts:[]});
   const overnightBachelor={name:'Overnight Bachelor Rooms',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:null,baths:null,area:null,rent:750,furnished:null,type:'4 bachelor rooms · priced per room',photoGroup:'roode',heroNumber:45,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
   const commune={name:'4 Bedroom Commune',address:'21 Roode Street',city:'Middelburg EC',count:4,vacant:0,vacancySample:true,beds:4,baths:2,area:null,rent:600,furnished:null,type:'4 communal rooms · priced per room',photoGroup:'roode-2bed-furnished',heroNumber:11,excludeNumbers:[],pricingMode:'nightly',unitLabel:'rooms'};
   const defaultProperties=[
@@ -60,6 +60,7 @@
       if(remote.heroPhotos?.length)merged.heroPhotos=remote.heroPhotos;
       else if(current.heroPhotos?.length)merged.heroPhotos=current.heroPhotos;
       merged.parallax={...(current.parallax||{}),...(remote.parallax||{})};
+      if(Array.isArray(remote.communityPosts))merged.communityPosts=remote.communityPosts;
       if(Array.isArray(merged.properties))merged.properties=migrateProperties(merged.properties);
       merged.overnight={...(merged.overnight||{}),price:'R 750'};
       const before=JSON.stringify(current),after=JSON.stringify(merged);
@@ -73,6 +74,26 @@
         }
       }
     }catch(e){console.warn('Unable to apply central site configuration',e)}
+  };
+
+  const escCommunity=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const renderCommunityPosts=remote=>{
+    const posts=Array.isArray(remote?.communityPosts)?remote.communityPosts:[];
+    const host=document.querySelector('#tenantComments');
+    if(!host||!posts.length)return;
+    host.querySelectorAll('[data-approved-community-post]').forEach(el=>el.remove());
+    posts.forEach(post=>{
+      const card=document.createElement('blockquote');
+      card.className='tenant-comment';
+      card.dataset.approvedCommunityPost='1';
+      const heading=document.createElement('div');heading.className='tenant-comment-heading';
+      const avatar=document.createElement('div');avatar.className='tenant-avatar-placeholder';avatar.textContent=String(post.name||'Tenant').split(/\s+/).filter(Boolean).map(x=>x[0]).join('').slice(0,2).toUpperCase()||'T';
+      const cite=document.createElement('cite');cite.textContent=`${post.name||'Tenant'} · ${post.relationship||'Current tenant'}`;
+      heading.append(avatar,cite);
+      const quote=document.createElement('p');quote.className='tenant-quote';quote.innerHTML=`<span class="comment-mark" aria-hidden="true">“</span> ${escCommunity(post.text||'')} <span class="comment-mark" aria-hidden="true">”</span>`;
+      card.append(heading,quote);host.append(card);
+    });
+    const empty=document.querySelector('#communityEmpty');if(empty)empty.hidden=host.children.length>0;
   };
 
   const decodeGithubContent=payload=>{
@@ -93,7 +114,7 @@
     .catch(()=>fetch(configFallbackUrl+'?v='+Date.now(),{cache:'no-store',credentials:'same-origin'}).then(response=>response.ok?response.json():null));
 
   loadCentral()
-    .then(applyCentral)
+    .then(remote=>{applyCentral(remote);renderCommunityPosts(remote)})
     .catch(error=>console.warn('Unable to load central site configuration',error));
 
   window.SITE_STATE=state;
