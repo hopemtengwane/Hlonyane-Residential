@@ -75,6 +75,10 @@ html{scroll-padding-top:104px}
   background-position:center;
   background-repeat:no-repeat;
 }
+/* Pull the hero image up under the fixed header so the gold divider sits directly on the photograph. */
+@media(min-width:801px){
+  .hero{margin-top:-38px}
+}
 
 @media(max-width:1150px){
   .site-header{height:81px;min-height:81px;padding-left:315px;padding-right:3vw}
@@ -94,5 +98,5 @@ html{scroll-padding-top:104px}
   .site-header .brand img{width:220px!important;height:112px!important}
   .site-header .menu-toggle{display:block;margin-left:auto}
   .site-header .site-nav{top:72px;background:#171717;border-bottom:1px solid #b9974a;transform:none}
-  .hero{padding-top:136px}
+  .hero{padding-top:136px;margin-top:0}
 }
