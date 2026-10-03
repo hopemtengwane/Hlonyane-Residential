@@ -3664,7 +3664,8 @@
   "deletedComments": [
     0,
     1,
-    2
+    2,
+    3
   ],
   "communityPosts": [
     {
@@ -3699,6 +3700,6 @@
     "portalEmail": "msindisi.mtengwane@gmail.com"
   },
   "_meta": {
-    "updatedAt": 1791039980932
+    "updatedAt": 1791042686064
   }
 }
