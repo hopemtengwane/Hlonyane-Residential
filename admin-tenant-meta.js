@@ -27,25 +27,31 @@
       const label=awayFrom.closest('label');
       if(label){label.hidden=true;label.style.display='none'}
     }
+    let awayToLabel=null;
     if(awayTo){
-      const label=awayTo.closest('label');
-      if(label){label.hidden=false;label.style.display='grid';setLabelText(label,'Away until')}
+      awayToLabel=awayTo.closest('label');
+      if(awayToLabel){awayToLabel.hidden=false;awayToLabel.style.display='grid';setLabelText(awayToLabel,'Away until')}
     }
 
     let leaseEnd=row.querySelector('[data-tenant="leaseEnd"]');
+    let leaseLabel=leaseEnd?.closest('label')||null;
     if(!leaseEnd){
       const index=row.querySelector('[data-index]')?.dataset.index||'';
       const tenant=savedTenantFor(row);
-      const label=document.createElement('label');
-      label.className='tenant-lease-expiry-field';
-      label.append('Lease Expiry Date');
+      leaseLabel=document.createElement('label');
+      leaseLabel.className='tenant-lease-expiry-field';
+      leaseLabel.append('Lease Expiry Date');
       leaseEnd=document.createElement('input');
       leaseEnd.type='date';
       leaseEnd.dataset.tenant='leaseEnd';
       if(index!=='')leaseEnd.dataset.index=index;
       leaseEnd.value=tenant?.leaseEnd||'';
-      label.append(leaseEnd);
-      fields.append(label);
+      leaseLabel.append(leaseEnd);
+    }
+    if(leaseLabel&&awayToLabel){
+      if(awayToLabel.nextSibling!==leaseLabel)awayToLabel.after(leaseLabel);
+    }else if(leaseLabel&&!leaseLabel.isConnected){
+      fields.append(leaseLabel);
     }
 
     const until=awayTo?.value||'';
