@@ -3662,6 +3662,16 @@
   },
   "parallax": {},
   "deletedComments": [],
+  "communityPosts": [
+    {
+      "id": "community-1791038795750-0",
+      "name": "Msindisi Mtengwane",
+      "relationship": "Current tenant",
+      "text": "I absolutely love living here. The landlord is very efficient and in tune with the needs of the tenants. Very clean, safe and well built. Couldn't have asked for a better place to stay.",
+      "date": "2026/10/03",
+      "approvedAt": "2026-10-03T14:46:36.066Z"
+    }
+  ],
   "contacts": {
     "phone": "072 455 9413",
     "email": "nomondehlonyane@gmail.com",
@@ -3669,6 +3679,6 @@
     "portalEmail": "msindisi.mtengwane@gmail.com"
   },
   "_meta": {
-    "updatedAt": 1791023953774
+    "updatedAt": 1791038796067
   }
 }
