@@ -1,0 +1,11 @@
+.admin-page .admin-card{background:#111613;color:#fff;border-color:#2b332e;box-shadow:0 24px 76px rgba(0,0,0,.52)}
+.admin-page .admin-card .eyebrow{color:#d6aa3a}
+.admin-page .admin-card h1{color:#fff}
+.admin-page .admin-intro{color:#b7beb9}
+.admin-page .admin-login label{color:#eef2ef}
+.admin-page .admin-login input:not([type=checkbox]){background:#1b211d;color:#fff;border-color:#4b554f}
+.admin-page .admin-login input:not([type=checkbox])::placeholder{color:#879189}
+.admin-page .admin-login input:focus{outline-color:#d6aa3a;border-color:#d6aa3a}
+.admin-page .admin-remember{color:#d7ddd8!important}
+.admin-page .admin-logo{filter:none}
+.admin-page .admin-login-status{color:#f3c467}
