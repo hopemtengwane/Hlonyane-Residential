@@ -3661,16 +3661,10 @@
     "image": "property-photos/1.jpg"
   },
   "parallax": {},
-  "deletedComments": [],
+  "deletedComments": [
+    0
+  ],
   "communityPosts": [
-    {
-      "id": "community-1791039921615-0",
-      "name": "Msindisi Mtengwane",
-      "relationship": "Current tenant",
-      "text": "I absolutely love living here. Very clean, safe and well looked after. Tenants are happy and respectful, and the landlord knows what they are doing. Maintenance is always prompt, efficient and unintrusive as possible",
-      "date": "2026/10/03",
-      "approvedAt": "2026-10-03T15:05:53.872Z"
-    },
     {
       "id": "community-1791038961950-0",
       "name": "Msindisi Mtengwane",
@@ -3695,6 +3689,6 @@
     "portalEmail": "msindisi.mtengwane@gmail.com"
   },
   "_meta": {
-    "updatedAt": 1791039953874
+    "updatedAt": 1791039961499
   }
 }
