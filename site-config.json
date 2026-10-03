@@ -3663,7 +3663,8 @@
   "parallax": {},
   "deletedComments": [
     0,
-    1
+    1,
+    2
   ],
   "communityPosts": [
     {
@@ -3690,6 +3691,6 @@
     "portalEmail": "msindisi.mtengwane@gmail.com"
   },
   "_meta": {
-    "updatedAt": 1791039963894
+    "updatedAt": 1791039966136
   }
 }
