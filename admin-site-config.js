@@ -17,6 +17,14 @@
   const cleanPhotoList=list=>(Array.isArray(list)?list:[]).map(cleanPhoto).filter(Boolean);
   const cleanPropertyPhotos=value=>Object.fromEntries(Object.entries(value||{}).map(([key,list])=>[key,cleanPhotoList(list)]).filter(([,list])=>list.length));
   const cleanParallax=parallax=>Object.fromEntries(Object.entries(parallax||{}).filter(([,v])=>v&&!isDataUrl(v)));
+  const cleanCommunityPosts=list=>(Array.isArray(list)?list:[]).map(post=>({
+    id:String(post?.id||''),
+    name:String(post?.name||'Tenant'),
+    relationship:String(post?.relationship||'Current tenant'),
+    text:String(post?.text||post?.quote||''),
+    date:String(post?.date||''),
+    approvedAt:String(post?.approvedAt||'')
+  })).filter(post=>post.text);
 
   const sanitise=state=>{
     const safe={
@@ -27,6 +35,7 @@
       overnight:state?.overnight?{...state.overnight,image:isDataUrl(state.overnight.image)?undefined:state.overnight.image}:null,
       parallax:cleanParallax(state?.parallax),
       deletedComments:Array.isArray(state?.deletedComments)?state.deletedComments:[],
+      communityPosts:cleanCommunityPosts(state?.communityPosts),
       contacts:state?.contacts||null,
       _meta:{updatedAt:Date.now()}
     };
