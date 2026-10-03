@@ -39,12 +39,12 @@
       await loadScript('admin-property-migration.js?v=20260928-1');
       await loadScript('pricing-policy.js?v=20260929-2');
       await loadScript('admin-app.js?v=20260929-2');
-      await loadScript('admin-tenant-cleanup.js?v=20260929-1');
+      // Demo filtering is already handled by tenant-sheet-sync.js. Do not load the old
+      // cleanup script here because it stripped real tenant passwords from browser state.
 
       setLoader('Loading tenant register…');
-      await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-4'),{timeout:9000});
+      await safeStep('Tenant register script',()=>loadScript('tenant-sheet-sync.js?v=20261003-5'),{timeout:9000});
       await safeStep('Tenant database',()=>window.HLONYANE_TENANT_SHEET_READY,{timeout:10000});
-      window.HLONYANE_TENANT_DEMO_CLEANUP?.run();
       window.HLONYANE_TENANT_META?.refresh?.();
 
       setLoader('Opening Admin workspace…');
