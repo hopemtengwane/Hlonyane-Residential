@@ -13,7 +13,7 @@
   async function safeStep(label,work,{timeout=8000}={}){try{return await withTimeout(typeof work==='function'?work():work,timeout,label)}catch(error){console.warn(`Hlonyane Admin: ${label} skipped`,error);return null}}
 
   async function loadOptionalServices(){
-    await safeStep('Lease status',()=>loadScript('admin-lease-status.js?v=20261003-5'),{timeout:6000});
+    await safeStep('Lease status',()=>loadScript('admin-lease-status.js?v=20261003-6'),{timeout:6000});
     window.HLONYANE_ADMIN_LEASES?.apply?.();
     await safeStep('Portal message script',()=>loadScript('admin-portal-messages.js?v=20261003-2'),{timeout:6000});
     await safeStep('Portal messages',()=>window.HLONYANE_ADMIN_PORTAL_MESSAGES_READY,{timeout:7000});
