@@ -1,0 +1,70 @@
+/* Final main-site header treatment: original layout, transparent floating logo, shorter header. */
+html{scroll-padding-top:120px}
+.site-header{
+  position:fixed;
+  top:0;
+  left:0;
+  right:0;
+  z-index:20;
+  width:100%;
+  height:108px;
+  min-height:108px;
+  padding:0 4.5vw 0 calc(4.5vw + 390px);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  overflow:visible;
+  background:#171717;
+  border-bottom:3px solid #b9974a;
+}
+.site-header .brand{
+  position:absolute;
+  left:4.5vw;
+  top:-2px;
+  z-index:22;
+  display:block;
+  width:350px;
+  height:178px;
+  line-height:0;
+  background:none!important;
+}
+.site-header .brand img{
+  display:block!important;
+  width:350px!important;
+  height:178px!important;
+  max-width:none;
+  object-fit:contain;
+  object-position:center;
+  opacity:1!important;
+  background:transparent!important;
+  mix-blend-mode:normal;
+}
+.site-header .site-nav{
+  position:relative;
+  z-index:23;
+  display:flex;
+  align-items:center;
+  gap:28px;
+  margin-left:auto;
+}
+.site-header .site-nav a{font-size:14px}
+.site-header .menu-toggle{position:relative;z-index:23}
+.hero{padding-top:188px}
+
+@media(max-width:1150px){
+  .site-header{padding-left:calc(3vw + 315px);padding-right:3vw}
+  .site-header .brand{left:3vw;width:300px;height:153px;top:-2px}
+  .site-header .brand img{width:300px!important;height:153px!important}
+  .site-header .site-nav{gap:16px}
+  .site-header .site-nav a{font-size:13px}
+}
+
+@media(max-width:800px){
+  html{scroll-padding-top:84px}
+  .site-header{height:76px;min-height:76px;padding:0 18px}
+  .site-header .brand{left:12px;top:-2px;width:220px;height:112px}
+  .site-header .brand img{width:220px!important;height:112px!important}
+  .site-header .menu-toggle{display:block;margin-left:auto}
+  .site-header .site-nav{top:76px;background:#171717;border-bottom:1px solid #b9974a}
+  .hero{padding-top:146px}
+}
