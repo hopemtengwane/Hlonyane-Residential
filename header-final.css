@@ -1,4 +1,4 @@
-/* Final main-site header treatment: logo artwork aligned to the page edges and a gold divider starting at the HLONYANE wordmark. */
+/* Final main-site header treatment: logo artwork aligned to the page edges and gold divider aligned to the wordmark gap. */
 html{scroll-padding-top:112px}
 .site-header{
   position:fixed;
@@ -20,9 +20,9 @@ html{scroll-padding-top:112px}
 .site-header::after{
   content:"";
   position:absolute;
-  left:34px;
+  left:98px;
   right:0;
-  bottom:8px;
+  bottom:16px;
   height:3px;
   background:#b9974a;
   z-index:21;
@@ -64,7 +64,7 @@ html{scroll-padding-top:112px}
 
 @media(max-width:1150px){
   .site-header{height:94px;min-height:94px;padding-left:315px;padding-right:3vw}
-  .site-header::after{left:30px;bottom:7px}
+  .site-header::after{left:84px;bottom:14px}
   .site-header .brand{left:-8px;top:-27px;width:300px;height:153px}
   .site-header .brand img{width:300px!important;height:153px!important}
   .site-header .site-nav{gap:16px}
@@ -75,7 +75,7 @@ html{scroll-padding-top:112px}
 @media(max-width:800px){
   html{scroll-padding-top:80px}
   .site-header{height:72px;min-height:72px;padding:0 18px}
-  .site-header::after{left:22px;bottom:5px;height:2px}
+  .site-header::after{left:62px;bottom:10px;height:2px}
   .site-header .brand{left:-6px;top:-20px;width:220px;height:112px}
   .site-header .brand img{width:220px!important;height:112px!important}
   .site-header .menu-toggle{display:block;margin-left:auto}
