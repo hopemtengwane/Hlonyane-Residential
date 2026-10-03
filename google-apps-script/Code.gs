@@ -47,7 +47,7 @@ function doGet(e) {
     else if (action === 'admin.listTenants') { requireAdmin_(p.accessToken || ''); result = {ok:true, tenants:listTenants_()}; }
     else if (action === 'admin.listLeases') { requireAdmin_(p.accessToken || ''); result = {ok:true, leases:listLeaseStatuses_()}; }
     else if (action === 'admin.getLease') { requireAdmin_(p.accessToken || ''); result = getAdminLease_(p.tenantId || ''); }
-    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.8'};
+    else result = {ok:true, service:'Hlonyane Tenant Data API', version:'1.9'};
     return jsonpOrJson_(result, p.callback);
   } catch (err) {
     return jsonpOrJson_({ok:false, error:String(err && err.message || err)}, e && e.parameter && e.parameter.callback);
@@ -60,6 +60,7 @@ function doPost(e) {
     const action = String(body.action || '');
     if (!action) throw new Error('Missing action');
     if (action === 'tenant.passwordLogin') return json_(passwordTenantLogin_(body.email || '', body.password || ''));
+    if (action === 'tenant.setPresence') return json_(saveTenantPresence_(body));
     if (action === 'tenant.sendMessage') return json_(submitTenantMessage_(body));
     if (action === 'tenant.markMessageRead') return json_(markTenantMessageRead_(body.messageId || '', body.email || '', body.tenantId || ''));
     if (action === 'tenant.saveLeaseDraft') return json_(saveTenantLeaseDraft_(body));
@@ -143,6 +144,41 @@ function passwordTenantLogin_(email, password) {
   if (!stored) return {ok:false, error:'A portal password has not been set for this tenant yet. Please contact the property manager.'};
   if (entered !== stored) return {ok:false, error:'Incorrect password for this tenant account.'};
   return {ok:true, tenant:tenantPayload_(tenant, clean)};
+}
+
+function saveTenantPresence_(body) {
+  const email = String(body.email || '').trim().toLowerCase();
+  const tenantId = String(body.tenantId || '').trim();
+  const awayFrom = String(body.awayFrom || '').trim();
+  const awayTo = String(body.awayTo || '').trim();
+  if (!email || !tenantId) return {ok:false, error:'Tenant session details are missing.'};
+  const sh = ensureTenantPasswordColumn_();
+  const headers = headers_(sh);
+  if (sh.getLastRow() < 2) return {ok:false, error:'Tenant account not found.'};
+  const emailCol = headers.indexOf('Email');
+  const idCol = headers.indexOf('Tenant ID');
+  const statusCol = headers.indexOf('Status');
+  const awayStatusCol = headers.indexOf('Home/Away Status');
+  const awayFromCol = headers.indexOf('Away From');
+  const awayToCol = headers.indexOf('Away To');
+  const updatedAtCol = headers.indexOf('Updated At');
+  const updatedByCol = headers.indexOf('Updated By');
+  const rows = sh.getRange(2,1,sh.getLastRow()-1,headers.length).getDisplayValues();
+  for (let i=0;i<rows.length;i++) {
+    const rowEmail = emailCol >= 0 ? String(rows[i][emailCol]).trim().toLowerCase() : '';
+    const rowId = idCol >= 0 ? String(rows[i][idCol]).trim() : '';
+    if (rowEmail !== email || rowId !== tenantId) continue;
+    if (statusCol >= 0 && String(rows[i][statusCol] || 'Active').trim().toLowerCase() !== 'active') return {ok:false, error:'This tenant account is not active.'};
+    const sheetRow = i + 2;
+    const isAway = !!awayFrom && !!awayTo;
+    if (awayStatusCol >= 0) sh.getRange(sheetRow, awayStatusCol + 1).setValue(isAway ? 'Away' : 'Home');
+    if (awayFromCol >= 0) sh.getRange(sheetRow, awayFromCol + 1).setValue(awayFrom);
+    if (awayToCol >= 0) sh.getRange(sheetRow, awayToCol + 1).setValue(awayTo);
+    if (updatedAtCol >= 0) sh.getRange(sheetRow, updatedAtCol + 1).setValue(Utilities.formatDate(new Date(), 'Africa/Johannesburg', "yyyy-MM-dd'T'HH:mm:ssXXX"));
+    if (updatedByCol >= 0) sh.getRange(sheetRow, updatedByCol + 1).setValue('Tenant Portal');
+    return {ok:true, awayFrom:awayFrom, awayTo:awayTo, status:isAway?'Away':'Home'};
+  }
+  return {ok:false, error:'Tenant account could not be matched.'};
 }
 
 function requestTenantOtp_(email) {
