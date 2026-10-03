@@ -22,7 +22,7 @@ html{scroll-padding-top:112px}
   position:absolute;
   left:60px;
   right:0;
-  top:104px;
+  top:96px;
   height:3px;
   background:#b9974a;
   z-index:24;
@@ -64,7 +64,7 @@ html{scroll-padding-top:112px}
 
 @media(max-width:1150px){
   .site-header{height:94px;min-height:94px;padding-left:315px;padding-right:3vw}
-  .site-header::after{left:52px;top:91px}
+  .site-header::after{left:52px;top:85px}
   .site-header .brand{left:-8px;top:-27px;width:300px;height:153px}
   .site-header .brand img{width:300px!important;height:153px!important}
   .site-header .site-nav{gap:16px}
@@ -75,7 +75,7 @@ html{scroll-padding-top:112px}
 @media(max-width:800px){
   html{scroll-padding-top:80px}
   .site-header{height:72px;min-height:72px;padding:0 18px}
-  .site-header::after{left:38px;top:66px;height:2px}
+  .site-header::after{left:38px;top:62px;height:2px}
   .site-header .brand{left:-6px;top:-20px;width:220px;height:112px}
   .site-header .brand img{width:220px!important;height:112px!important}
   .site-header .menu-toggle{display:block;margin-left:auto}
