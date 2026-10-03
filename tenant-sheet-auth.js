@@ -98,3 +98,13 @@
     if (event.key === 'Enter') signIn(event);
   });
 })();
+
+// The public community renderer is kept separate from sign-in logic but loaded
+// here because this file is already part of the public homepage bundle.
+(() => {
+  if (document.querySelector('script[data-community-public]')) return;
+  const script = document.createElement('script');
+  script.src = 'community-public.js?v=20261003-1';
+  script.dataset.communityPublic = '1';
+  document.body.appendChild(script);
+})();
