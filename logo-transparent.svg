@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1236 614" role="img" aria-label="Hlonyane Residential">
+  <defs>
+    <filter id="threshold" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+      <feColorMatrix type="luminanceToAlpha"/>
+      <feComponentTransfer>
+        <feFuncA type="table" tableValues="0 0 0 .15 .8 1 1 1 1 1 1 1 1 1 1 1"/>
+      </feComponentTransfer>
+    </filter>
+    <mask id="logoMask" maskUnits="userSpaceOnUse" x="0" y="0" width="1236" height="614">
+      <image href="logo.png" x="0" y="0" width="1236" height="614" filter="url(#threshold)"/>
+    </mask>
+  </defs>
+  <image href="logo.png" x="0" y="0" width="1236" height="614" mask="url(#logoMask)"/>
+</svg>
