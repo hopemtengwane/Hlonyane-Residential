@@ -3664,6 +3664,14 @@
   "deletedComments": [],
   "communityPosts": [
     {
+      "id": "community-1791038961950-0",
+      "name": "Msindisi Mtengwane",
+      "relationship": "Current tenant",
+      "text": "I absolutely love living here. Very clean, safe and well looked after. Tenants are happy and respectful, and the landlord knows what they are doing. Maintenance is always prompt, efficient and unintrusive as possible.",
+      "date": "2026/10/03",
+      "approvedAt": "2026-10-03T14:49:54.941Z"
+    },
+    {
       "id": "community-1791038795750-0",
       "name": "Msindisi Mtengwane",
       "relationship": "Current tenant",
@@ -3679,6 +3687,6 @@
     "portalEmail": "msindisi.mtengwane@gmail.com"
   },
   "_meta": {
-    "updatedAt": 1791038796067
+    "updatedAt": 1791038994942
   }
 }
