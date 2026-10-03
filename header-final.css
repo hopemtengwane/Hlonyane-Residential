@@ -1,4 +1,4 @@
-/* Final main-site header treatment: original layout, transparent floating logo, shorter header. */
+/* Final main-site header treatment: logo against page edges with a shortened gold divider starting at the wordmark. */
 html{scroll-padding-top:120px}
 .site-header{
   position:fixed;
@@ -9,18 +9,29 @@ html{scroll-padding-top:120px}
   width:100%;
   height:108px;
   min-height:108px;
-  padding:0 4.5vw 0 calc(4.5vw + 390px);
+  padding:0 4.5vw 0 390px;
   display:flex;
   align-items:center;
   justify-content:space-between;
   overflow:visible;
   background:#171717;
-  border-bottom:3px solid #b9974a;
+  border-bottom:0;
+}
+.site-header::after{
+  content:"";
+  position:absolute;
+  left:72px;
+  right:0;
+  bottom:0;
+  height:3px;
+  background:#b9974a;
+  z-index:21;
+  pointer-events:none;
 }
 .site-header .brand{
   position:absolute;
-  left:4.5vw;
-  top:-2px;
+  left:0;
+  top:0;
   z-index:22;
   display:block;
   width:350px;
@@ -34,7 +45,7 @@ html{scroll-padding-top:120px}
   height:178px!important;
   max-width:none;
   object-fit:contain;
-  object-position:center;
+  object-position:left top;
   opacity:1!important;
   background:transparent!important;
   mix-blend-mode:normal;
@@ -52,8 +63,9 @@ html{scroll-padding-top:120px}
 .hero{padding-top:188px}
 
 @media(max-width:1150px){
-  .site-header{padding-left:calc(3vw + 315px);padding-right:3vw}
-  .site-header .brand{left:3vw;width:300px;height:153px;top:-2px}
+  .site-header{padding-left:315px;padding-right:3vw}
+  .site-header::after{left:62px}
+  .site-header .brand{left:0;top:0;width:300px;height:153px}
   .site-header .brand img{width:300px!important;height:153px!important}
   .site-header .site-nav{gap:16px}
   .site-header .site-nav a{font-size:13px}
@@ -62,7 +74,8 @@ html{scroll-padding-top:120px}
 @media(max-width:800px){
   html{scroll-padding-top:84px}
   .site-header{height:76px;min-height:76px;padding:0 18px}
-  .site-header .brand{left:12px;top:-2px;width:220px;height:112px}
+  .site-header::after{left:45px;height:2px}
+  .site-header .brand{left:0;top:0;width:220px;height:112px}
   .site-header .brand img{width:220px!important;height:112px!important}
   .site-header .menu-toggle{display:block;margin-left:auto}
   .site-header .site-nav{top:76px;background:#171717;border-bottom:1px solid #b9974a}
